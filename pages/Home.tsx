@@ -6,7 +6,7 @@ import { Ticket, TicketType, TrainClass } from '../types';
 import { TicketCard } from '../components/TicketCard';
 import { findMatchesAI, analyzeRouteMatches } from '../services/geminiService';
 import { getCurrentUser } from '../services/authService';
-import { Search, Loader2, Sparkles, Filter, X, MapPin, ArrowDown, Lock, Ticket as TicketIcon, Calendar, RefreshCw, FilterX, Info } from 'lucide-react';
+import { Search, Loader2, Sparkles, Filter, X, MapPin, ArrowDown, Lock, Ticket as TicketIcon, Calendar, RefreshCw, FilterX } from 'lucide-react';
 import { StationInput } from '../components/StationInput';
 import { CustomDatePicker } from '../components/CustomDatePicker';
 
@@ -92,10 +92,10 @@ export const Home: React.FC = () => {
   }, []);
 
   const handleClearAll = useCallback(() => {
-    // Check if any filters were actually active
-    const hasFilters = searchQuery || routeFrom || routeTo || filterType !== 'ALL' || selectedClasses.length > 0 || filterDate || showMyListings;
+    // Check if any filters were actually active to avoid spamming toast
+    const hasActiveFilters = searchQuery || routeFrom || routeTo || filterType !== 'ALL' || selectedClasses.length > 0 || filterDate || showMyListings;
     
-    if (hasFilters) {
+    if (hasActiveFilters) {
       setSearchQuery('');
       setAiMatches(null);
       setRouteFrom('');
@@ -108,7 +108,7 @@ export const Home: React.FC = () => {
       setShowMyListings(false);
       setMatchFilter('ALL');
 
-      // Show toast
+      // Show the "Filters removed" notification
       setShowResetToast(true);
       setTimeout(() => setShowResetToast(false), 2000);
     }
@@ -167,7 +167,7 @@ export const Home: React.FC = () => {
       }
     }
 
-    // 2) Route filters (defensive)
+    // 2) Route filters
     if (routeFrom && routeTo) {
       if (!isRouteAnalyzing) {
         const exact = routeMatches?.exact || [];
@@ -202,22 +202,16 @@ export const Home: React.FC = () => {
       }
     }
 
-    // 3) Ticket type filter (string-safe)
+    // 3) Ticket type filter
     if (filterType !== 'ALL') {
-      result = result.filter(
-        t =>
-          String(t.type).toUpperCase() ===
-          String(filterType).toUpperCase()
-      );
+      result = result.filter(t => t.type === filterType);
     }
 
-    // 4) Class filter (string-safe)
+    // 4) Class filter
     if (selectedClasses.length > 0) {
-      const upperSelected = selectedClasses.map(cls => String(cls).toUpperCase());
       result = result.filter(t => {
-        const ticketClass = String(t.classType).toUpperCase();
-        if (upperSelected.includes(ticketClass)) return true;
-        if (String(t.type).toUpperCase() === 'REQUEST' && t.isFlexibleClass) return true;
+        if (selectedClasses.includes(t.classType)) return true;
+        if (t.type === TicketType.REQUEST && t.isFlexibleClass) return true;
         return false;
       });
     }
@@ -291,10 +285,10 @@ export const Home: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative">
-      {/* Filters Removed Notification */}
+      {/* Toast Notification */}
       {showResetToast && (
         <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] animate-in fade-in slide-in-from-top-4 duration-300">
-          <div className="bg-cyan-950 border border-cyan-500/50 text-cyan-400 px-6 py-2.5 rounded-full shadow-[0_0_20px_rgba(6,182,212,0.3)] flex items-center gap-2 font-bold text-sm backdrop-blur-md">
+          <div className="bg-cyan-950 border border-cyan-500/40 text-cyan-400 px-6 py-2.5 rounded-full shadow-[0_0_20px_rgba(6,182,212,0.3)] flex items-center gap-2 font-bold text-sm backdrop-blur-md">
             <FilterX className="h-4 w-4" />
             Filters removed
           </div>

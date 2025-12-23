@@ -1,6 +1,4 @@
 
-// api/generate.ts
-// Fix: Use import instead of require as per guidelines
 import { GoogleGenAI } from "@google/genai";
 
 export default async function handler(req: Request): Promise<Response> {
@@ -20,25 +18,31 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   try {
-    const { prompt } = (await req.json()) as { prompt: string };
+    const { model, contents, config } = (await req.json());
 
-    // Fix: Always create a new GoogleGenAI instance inside the handler using process.env.API_KEY directly
+    // Create a new GoogleGenAI instance for every request to ensure fresh state
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    // Fix: Use gemini-3-flash-preview instead of prohibited gemini-1.5-flash
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: prompt,
-    });
-    // Fix: Use .text property directly instead of calling .text() method
-    const text = response.text;
+    
+    // Default to gemini-3-flash-preview if no model specified
+    const targetModel = model || 'gemini-3-flash-preview';
 
-    return new Response(JSON.stringify({ text }), {
+    const response = await ai.models.generateContent({
+      model: targetModel,
+      contents: contents,
+      config: config || {}
+    });
+
+    // Directly access .text property as per guidelines
+    return new Response(JSON.stringify({ text: response.text }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
-  } catch (err) {
-    console.error(err);
-    return new Response(JSON.stringify({ error: 'Generation failed' }), {
+  } catch (err: any) {
+    console.error('Gemini Proxy Error:', err);
+    return new Response(JSON.stringify({ 
+      error: 'Generation failed', 
+      details: err.message 
+    }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });
