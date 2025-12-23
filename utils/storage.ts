@@ -58,12 +58,14 @@ const getFlexValue = (obj: any, targetKey: string) => {
         fromStation: ['source', 'from', 'origin', 'start', 'boarding', 'src'],
         toStation: ['destination', 'to', 'dest', 'end', 'arrival', 'dst'],
         classType: ['class', 'coach', 'berth', 'classtype', 'cl'],
+        berthType: ['seat', 'seattype', 'berth', 'berthpreference', 'position'],
         userContact: ['phone', 'contact', 'mobile', 'whatsapp', 'phone_number'],
         sellerName: ['name', 'seller', 'user', 'postedby', 'name_of_seller'],
         price: ['price', 'fare', 'cost', 'amount', 'rate'],
         departureTime: ['dep', 'deptime', 'departure', 'start_time'],
         arrivalTime: ['arr', 'arrtime', 'arrival', 'end_time'],
-        duration: ['dur', 'traveltime', 'time', 'totaltime']
+        duration: ['dur', 'traveltime', 'time', 'totaltime'],
+        comment: ['comment', 'note', 'message', 'remarks']
     };
     if (aliases[targetKey]) {
         const aliasKey = Object.keys(obj).find(k => aliases[targetKey].includes(normalize(k)));
@@ -105,7 +107,7 @@ export const getStoredTickets = async (): Promise<Ticket[]> => {
   const result = await callSheetAPI('getTickets');
   
   if (result) {
-      apiSuccess = true; // Any non-null response from API is success (prevents stale local fallback)
+      apiSuccess = true; 
       let rawData: any[] = [];
       if (Array.isArray(result)) rawData = result;
       else if (result.success && Array.isArray(result.data)) rawData = result.data;
@@ -136,11 +138,13 @@ export const getStoredTickets = async (): Promise<Ticket[]> => {
               arrivalTime: arr,
               duration: dur === '6h 00m' ? calculateDuration(dep, arr) : dur,
               classType: (getFlexValue(t, 'classType') || TrainClass.SL) as TrainClass,
+              berthType: String(getFlexValue(t, 'berthType') || ''),
               price: Number(String(getFlexValue(t, 'price') || 0).replace(/[^\d.]/g, '')),
               status: (getFlexValue(t, 'status') || TicketStatus.OPEN) as TicketStatus,
               createdAt: Number(getFlexValue(t, 'createdAt')) || Date.now(),
               userContact: String(getFlexValue(t, 'userContact') || ''),
               sellerName: String(getFlexValue(t, 'sellerName') || 'Anonymous'),
+              comment: String(getFlexValue(t, 'comment') || ''),
               isFlexibleDate: String(getFlexValue(t, 'isFlexibleDate')).toLowerCase() === 'true',
               isFlexibleClass: String(getFlexValue(t, 'isFlexibleClass')).toLowerCase() === 'true'
           };
@@ -148,12 +152,10 @@ export const getStoredTickets = async (): Promise<Ticket[]> => {
   }
 
   if (apiSuccess) {
-      // If API succeeded, use ONLY server data. Local storage is strictly a cache of server.
       const activeTickets = serverTickets.filter(t => t.date >= todayIST);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(activeTickets));
       return activeTickets;
   } else {
-      // If API failed, use local cache as backup
       try {
         const stored = localStorage.getItem(STORAGE_KEY);
         return stored ? JSON.parse(stored).filter((t: any) => t.date >= todayIST) : [];

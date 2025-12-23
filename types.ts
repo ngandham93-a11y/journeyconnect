@@ -1,3 +1,4 @@
+
 export enum TicketType {
   OFFER = 'OFFER',
   REQUEST = 'REQUEST'
@@ -11,11 +12,16 @@ export enum TicketStatus {
 }
 
 export enum TrainClass {
-  SL = 'SL',
-  CC = 'CC',
-  AC_3 = '3A',
-  AC_2 = '2A',
-  AC_1 = '1A'
+  EA = 'EA',   // Anubhuti Class
+  EC = 'EC',   // Executive Chair Car
+  AC_1 = '1A', // First AC
+  AC_2 = '2A', // Second AC
+  AC_3 = '3A', // Third AC
+  AC_3E = '3E',// Third AC Economy
+  FC = 'FC',   // First Class
+  CC = 'CC',   // AC Chair Car
+  SL = 'SL',   // Sleeper
+  S_2 = '2S'    // Second Sitting
 }
 
 export interface User {
@@ -38,10 +44,12 @@ export interface Ticket {
   arrivalTime: string; // HH:mm
   duration: string;
   classType: TrainClass;
+  berthType?: string;
   price: number;
   status: TicketStatus;
   userContact: string; 
   sellerName?: string;
+  comment?: string;
   amenities?: string[];
   isFlexibleDate?: boolean;
   isFlexibleClass?: boolean;

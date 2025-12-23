@@ -5,10 +5,21 @@ import { parseTicketIntent, lookupTrainInfo, getUpdatedTrainTimings } from '../s
 import { getCurrentUser } from '../services/authService';
 import { saveTicket, getStoredTickets, calculateDuration } from '../utils/storage';
 import { TicketType, TrainClass, TicketStatus, Ticket } from '../types';
-import { Sparkles, Loader2, IndianRupee, AlertCircle, ArrowRight, X, TrainFront, Info, Calendar } from 'lucide-react';
+import { Sparkles, Loader2, IndianRupee, AlertCircle, ArrowRight, X, TrainFront, Info, MessageSquare, LayoutGrid } from 'lucide-react';
 import { TicketCard } from '../components/TicketCard';
 import { StationInput } from '../components/StationInput';
 import { CustomDatePicker } from '../components/CustomDatePicker';
+
+const BERTH_TYPES = [
+  'No Preference',
+  'Lower Berth (LB)',
+  'Middle Berth (MB)',
+  'Upper Berth (UB)',
+  'Side Lower (SL)',
+  'Side Upper (SU)',
+  'Window Seat',
+  'Aisle Seat'
+];
 
 export const ListingForm: React.FC = () => {
   const navigate = useNavigate();
@@ -41,10 +52,16 @@ export const ListingForm: React.FC = () => {
     departureTime: '',
     arrivalTime: '',
     classType: TrainClass.SL,
+    berthType: 'No Preference',
     price: '' as string | number, 
+    comment: '',
     userContact: currentUser?.phoneNumber || '',
     sellerName: currentUser?.name || 'User'
   });
+
+  // Word count calculation
+  const getWordCount = (str: string) => str.trim().split(/\s+/).filter(Boolean).length;
+  const wordCount = getWordCount(formData.comment);
 
   // Effect to update timings when train number and stations are filled
   useEffect(() => {
@@ -148,15 +165,27 @@ export const ListingForm: React.FC = () => {
     if (!currentUser) return;
     setLoading(true);
 
-    if (!formData.price || Number(formData.price) <= 0 || !Number.isInteger(Number(formData.price))) {
+    if (!formData.trainNumber || formData.trainNumber.length < 5) {
         setLoading(false);
-        alert("Please enter a valid price.");
+        alert("Please enter a valid 5-digit train number.");
         return;
     }
 
     if (!formData.date) {
         setLoading(false);
         alert("Please select a travel date.");
+        return;
+    }
+
+    if (!formData.price || Number(formData.price) <= 0 || !Number.isInteger(Number(formData.price))) {
+        setLoading(false);
+        alert("Please enter a valid price.");
+        return;
+    }
+
+    if (wordCount > 10) {
+        setLoading(false);
+        alert("Comment must be up to 10 words only.");
         return;
     }
     
@@ -232,13 +261,13 @@ export const ListingForm: React.FC = () => {
                <div className="md:col-span-2">
                   <label className={labelClass}>Purpose</label>
                   <div className="grid grid-cols-2 gap-4">
-                    <button type="button" onClick={() => setFormData({...formData, type: TicketType.OFFER})} className={`py-3 rounded-xl border font-bold transition-all ${formData.type === TicketType.OFFER ? 'bg-cyan-500/10 border-cyan-500 text-cyan-400' : 'bg-slate-950 border-slate-800 text-slate-500'}`}>Giving Up</button>
-                    <button type="button" onClick={() => setFormData({...formData, type: TicketType.REQUEST})} className={`py-3 rounded-xl border font-bold transition-all ${formData.type === TicketType.REQUEST ? 'bg-amber-500/10 border-amber-500 text-amber-400' : 'bg-slate-950 border-slate-800 text-slate-500'}`}>Need a Ticket</button>
+                    <button type="button" onClick={() => setFormData({...formData, type: TicketType.OFFER})} className={`py-3 rounded-xl border font-bold transition-all ${formData.type === TicketType.OFFER ? 'bg-cyan-500/10 border-cyan-500 text-cyan-400' : 'bg-slate-950 border-slate-800 text-slate-500'}`}>Submit</button>
+                    <button type="button" onClick={() => setFormData({...formData, type: TicketType.REQUEST})} className={`py-3 rounded-xl border font-bold transition-all ${formData.type === TicketType.REQUEST ? 'bg-amber-500/10 border-amber-500 text-amber-400' : 'bg-slate-950 border-slate-800 text-slate-500'}`}>Request</button>
                   </div>
                </div>
                
                <div>
-                  <label className={labelClass}>Train Number</label>
+                  <label className={labelClass}>Train Number <span className="text-red-500">*</span></label>
                   <div className="relative">
                     <TrainFront className="absolute left-4 top-3.5 h-4 w-4 text-slate-500" />
                     <input type="text" required placeholder="5-digit Number" value={formData.trainNumber} onChange={(e) => handleTrainNumberChange(e.target.value)} className={`${inputClass} pl-10`} />
@@ -256,7 +285,7 @@ export const ListingForm: React.FC = () => {
                <div><StationInput label="To" value={formData.toStation} onChange={(v) => setFormData({...formData, toStation: v})} required /></div>
 
                <div>
-                  <label className={labelClass}>Travel Date</label>
+                  <label className={labelClass}>Travel Date <span className="text-red-500">*</span></label>
                   <CustomDatePicker 
                     value={formData.date} 
                     onChange={(v) => setFormData({...formData, date: v})} 
@@ -280,7 +309,7 @@ export const ListingForm: React.FC = () => {
                     {Object.values(TrainClass).map(c => (<option key={c} value={c}>{c}</option>))}
                   </select>
                   {formData.type === TicketType.REQUEST && (
-                    <div className="mt-3 flex items-center gap-2">
+                    <div className="mt-3 flex items-center gap-3">
                         <input type="checkbox" id="flexC" checked={isFlexibleClass} onChange={e => setIsFlexibleClass(e.target.checked)} className="rounded bg-slate-900 border-slate-700" />
                         <label htmlFor="flexC" className="text-xs text-slate-400">Any Class (Flexible)</label>
                     </div>
@@ -288,18 +317,47 @@ export const ListingForm: React.FC = () => {
                </div>
 
                <div>
-                  <label className={labelClass}>Price (₹)</label>
+                  <label className={labelClass}>Berth / Seat Type</label>
+                  <div className="relative">
+                    <LayoutGrid className="absolute left-4 top-3.5 h-4 w-4 text-slate-500" />
+                    <select value={formData.berthType} onChange={(e) => setFormData({...formData, berthType: e.target.value})} className={`${inputClass} pl-10`}>
+                      {BERTH_TYPES.map(bt => (<option key={bt} value={bt}>{bt}</option>))}
+                    </select>
+                  </div>
+               </div>
+
+               <div>
+                  <label className={labelClass}>Price (₹) <span className="text-red-500">*</span></label>
                   <div className="relative">
                     <IndianRupee className="absolute left-4 top-3.5 h-4 w-4 text-slate-500" />
                     <input type="number" required placeholder="0" value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} className={`${inputClass} pl-10`} />
+                  </div>
+               </div>
+
+               <div className="md:col-span-2">
+                  <div className="flex justify-between items-center mb-2">
+                    <label className={labelClass}>Comment (Optional)</label>
+                    <span className={`text-[10px] font-bold ${wordCount > 10 ? 'text-red-500' : 'text-slate-500'}`}>
+                      {wordCount}/10 words
+                    </span>
+                  </div>
+                  <div className="relative">
+                    <MessageSquare className="absolute left-4 top-3.5 h-4 w-4 text-slate-500" />
+                    <textarea 
+                      rows={2}
+                      placeholder="Add a short note (e.g. 'Near entrance' or 'Urgent travel')" 
+                      value={formData.comment} 
+                      onChange={(e) => setFormData({...formData, comment: e.target.value})} 
+                      className={`${inputClass} pl-10 resize-none`} 
+                    />
                   </div>
                </div>
             </div>
 
             <div className="pt-8 border-t border-slate-800 flex justify-end gap-4">
                 <button type="button" onClick={() => navigate('/')} className="px-6 py-3 rounded-xl text-slate-400 font-bold">Cancel</button>
-                <button type="submit" disabled={loading} className="px-8 py-3 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-bold">
-                  {loading ? <Loader2 className="animate-spin h-5 w-5" /> : 'Submit'}
+                <button type="submit" disabled={loading || wordCount > 10} className="px-8 py-3 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-bold disabled:opacity-50">
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Submit'}
                 </button>
             </div>
           </form>

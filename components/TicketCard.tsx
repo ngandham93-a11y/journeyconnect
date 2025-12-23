@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Ticket, TicketType } from '../types';
-import { ArrowRight, IndianRupee, Trash2, AlertTriangle, Phone, User, X, BadgeCheck, Map, ShieldCheck } from 'lucide-react';
+import { ArrowRight, IndianRupee, Trash2, AlertTriangle, Phone, User, X, BadgeCheck, Map, ShieldCheck, MessageSquare, LayoutGrid } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getCurrentUser } from '../services/authService';
 import { deleteTicket } from '../utils/storage';
@@ -92,6 +92,11 @@ export const TicketCard: React.FC<TicketCardProps> = ({ ticket, onDelete, matchT
                   <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-extrabold tracking-wider uppercase bg-slate-800 text-cyan-400 border border-slate-700">
                       {ticket.classType}
                   </span>
+                  {ticket.berthType && ticket.berthType !== 'No Preference' && (
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-extrabold tracking-wider uppercase bg-slate-900 text-slate-300 border border-slate-800">
+                        {ticket.berthType}
+                    </span>
+                  )}
                   
                   {matchType === 'EXACT' && (
                     <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold uppercase bg-emerald-500 text-white shadow-lg shadow-emerald-900/50 gap-1">
@@ -139,9 +144,17 @@ export const TicketCard: React.FC<TicketCardProps> = ({ ticket, onDelete, matchT
               </div>
           </div>
 
-          {/* Price Only */}
-          <div className="flex items-end justify-end mt-auto">
-              <div className="text-right">
+          {/* Price & Comment */}
+          <div className="flex items-end justify-between mt-auto gap-4">
+              <div className="flex-1 min-w-0">
+                  {ticket.comment && (
+                    <div className="flex items-start gap-2 bg-slate-950/40 p-2.5 rounded-lg border border-slate-800/50">
+                       <MessageSquare className="h-3 w-3 text-cyan-500 shrink-0 mt-0.5" />
+                       <p className="text-[11px] text-slate-400 font-medium leading-snug italic line-clamp-2">"{ticket.comment}"</p>
+                    </div>
+                  )}
+              </div>
+              <div className="text-right shrink-0">
                   <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-0.5">Price</div>
                   <div className="flex items-center justify-end text-cyan-400 font-black text-2xl drop-shadow-[0_0_8px_rgba(6,182,212,0.3)]">
                       <IndianRupee className="h-5 w-5 mr-0.5" />

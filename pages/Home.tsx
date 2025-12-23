@@ -6,7 +6,7 @@ import { Ticket, TicketType, TrainClass } from '../types';
 import { TicketCard } from '../components/TicketCard';
 import { findMatchesAI, analyzeRouteMatches } from '../services/geminiService';
 import { getCurrentUser } from '../services/authService';
-import { Search, Loader2, Sparkles, Filter, X, MapPin, ArrowDown, Lock, Ticket as TicketIcon, Calendar, RefreshCw, FilterX } from 'lucide-react';
+import { Search, Loader2, Sparkles, Filter, X, MapPin, ArrowDown, Lock, Calendar, RefreshCw, FilterX } from 'lucide-react';
 import { StationInput } from '../components/StationInput';
 import { CustomDatePicker } from '../components/CustomDatePicker';
 
@@ -300,23 +300,21 @@ export const Home: React.FC = () => {
            Share the <span className="text-cyan-400">Journey</span>
         </h1>
         <p className="text-slate-400 max-w-2xl mx-auto text-lg mb-8">
-           Connect instantly with travelers
+           Connect instantly with fellow travelers and also send your parcels instantly overnight within cities
         </p>
         <div className="flex flex-wrap justify-center gap-4">
             <Link to="/give" className="group relative px-8 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl font-bold text-white shadow-lg shadow-emerald-900/20 hover:scale-105 transition-all">
                 <div className="absolute inset-0 bg-white/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 <div className="flex items-center gap-3">
-                    <TicketIcon className="h-6 w-6" />
-                    <span className="text-lg">I have a spare ticket</span>
+                    <span className="text-lg">Submit</span>
                 </div>
-                <div className="text-[10px] uppercase font-bold text-emerald-100/80 mt-1 tracking-wider">Help someone travel</div>
             </Link>
             <button 
                 onClick={() => document.getElementById('search-section')?.scrollIntoView({ behavior: 'smooth' })}
                 className="px-8 py-4 bg-slate-800 border border-slate-700 rounded-2xl font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition-all flex items-center gap-3"
             >
                 <Search className="h-5 w-5" />
-                <span>I need a ticket</span>
+                <span>Request</span>
             </button>
         </div>
       </div>
@@ -467,7 +465,7 @@ export const Home: React.FC = () => {
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Class</label>
                 <div className="space-y-3">
                     {Object.values(TrainClass).map(cls => (
-                        <label key={cls} className="flex items-center gap-3 text-sm text-slate-300 cursor-pointer group">
+                        <label key={cls} className="flex items-center gap-3 text-sm text-slate-300 cursor-pointer group" title={cls}>
                             <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${selectedClasses.includes(cls) ? 'bg-cyan-500 border-cyan-500' : 'border-slate-700 bg-slate-950 group-hover:border-slate-500'}`}>
                                 {selectedClasses.includes(cls) && <div className="w-2 h-2 bg-white rounded-sm" />}
                             </div>
