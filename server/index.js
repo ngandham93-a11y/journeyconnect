@@ -1,57 +1,174 @@
 
 import express from 'express';
 import cors from 'cors';
-import { GoogleGenAI } from '@google/genai';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { GoogleGenAI, Type } from '@google/genai';
+
+// Necessary for ES modules to get __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const port = process.env.PORT || 3001;
+
+// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Helper to extract JSON object text from arbitrary text
-const extractJSONFromText = (text) => {
-  if (!text) return null;
-  try {
-    const match = text.match(/\{[\s\S]*\}/);
-    if (!match) return null;
-    return JSON.parse(match[0]);
-  } catch (e) {
-    console.error('Failed to parse JSON from text:', e, text);
-    return null;
+// API Key Validation
+const getAI = () => {
+  if (!process.env.API_KEY) {
+    throw new Error('API_KEY environment variable is not set on the server.');
   }
+  return new GoogleGenAI({ apiKey: process.env.API_KEY });
 };
 
-app.post('/api/lookup-train', async (req, res) => {
-  const { trainNumber } = req.body || {};
-  if (!trainNumber) return res.status(400).json({ success: false, error: 'trainNumber required' });
-
+/**
+ * AI API Endpoints
+ */
+app.post('/api/parse-ticket', async (req, res) => {
+  const { text } = req.body;
+  if (!text) return res.status(400).json({ error: 'Text input required' });
   try {
-    // Fix: Create a new GoogleGenAI instance for each request to ensure fresh configuration
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    // Fix: Use gemini-3-flash-preview as per guidelines for text tasks
+    const ai = getAI();
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `Find the official schedule and route for Indian Railway Train Number "${trainNumber}".\nI need the exact Train Name, Source Station Name & Code, Destination Station Name & Code, Departure Time from Source, and Arrival Time at Destination.\n\nReturn ONLY a JSON object:\n{\n  "trainName": "Train Name",\n  "fromStation": "Station Name (Code)",\n  "toStation": "Station Name (Code)",\n  "departureTime": "HH:mm", \n  "arrivalTime": "HH:mm"\n}\n`,
+      contents: `Extract railway ticket details from: "${text}"`,
       config: {
-        tools: [{ googleSearch: {} }],
-      },
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            trainNumber: { type: Type.STRING },
+            trainName: { type: Type.STRING },
+            fromStation: { type: Type.STRING },
+            toStation: { type: Type.STRING },
+            date: { type: Type.STRING },
+            classType: { type: Type.STRING },
+            type: { type: Type.STRING },
+            price: { type: Type.NUMBER },
+            departureTime: { type: Type.STRING }
+          }
+        }
+      }
     });
-
-    // Fix: Use .text property directly for generated content
-    const text = response.text || '';
-    const parsed = extractJSONFromText(text);
-
-    if (!parsed) {
-      return res.status(200).json({ success: false, error: 'no_parsed_json', raw: text });
-    }
-
-    // Always include grounding metadata when using googleSearch tool
-    const groundingMetadata = response.candidates?.[0]?.groundingMetadata;
-    return res.json({ success: true, data: parsed, grounding: groundingMetadata });
-  } catch (e) {
-    console.error('Server lookup error:', e);
-    return res.status(500).json({ success: false, error: String(e) });
+    res.json(JSON.parse(response.text));
+  } catch (err) {
+    res.status(500).json({ error: 'AI Parsing failed' });
   }
 });
 
-app.listen(port, () => console.log(`GenAI proxy server listening on http://localhost:${port}`));
+app.post('/api/find-matches', async (req, res) => {
+  const { query, tickets } = req.body;
+  try {
+    const ai = getAI();
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: `Match query "${query}" against tickets: ${JSON.stringify(tickets)}`,
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            matchedIds: { type: Type.ARRAY, items: { type: Type.STRING } }
+          }
+        }
+      }
+    });
+    res.json(JSON.parse(response.text));
+  } catch (err) {
+    res.status(500).json({ error: 'AI Matching failed' });
+  }
+});
+
+app.post('/api/analyze-route', async (req, res) => {
+  const { from, to, tickets } = req.body;
+  try {
+    const ai = getAI();
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: `Find matches for route ${from} to ${to} in: ${JSON.stringify(tickets)}`,
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            exact: { type: Type.ARRAY, items: { type: Type.STRING } },
+            partial: { type: Type.ARRAY, items: { type: Type.STRING } }
+          }
+        }
+      }
+    });
+    res.json(JSON.parse(response.text));
+  } catch (err) {
+    res.status(500).json({ error: 'Route analysis failed' });
+  }
+});
+
+app.post('/api/lookup-train', async (req, res) => {
+  const { trainNumber } = req.body;
+  try {
+    const ai = getAI();
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-pro-preview',
+      contents: `Get schedule for Train ${trainNumber}`,
+      config: {
+        tools: [{ googleSearch: {} }],
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            trainName: { type: Type.STRING },
+            fromStation: { type: Type.STRING },
+            toStation: { type: Type.STRING },
+            departureTime: { type: Type.STRING },
+            arrivalTime: { type: Type.STRING }
+          }
+        }
+      }
+    });
+    res.json(JSON.parse(response.text));
+  } catch (err) {
+    res.status(500).json({ error: 'Train lookup failed' });
+  }
+});
+
+app.post('/api/get-train-timings', async (req, res) => {
+  const { trainNumber, from, to } = req.body;
+  try {
+    const ai = getAI();
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: `Get timings for Train ${trainNumber} from ${from} to ${to}`,
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            departureTime: { type: Type.STRING },
+            arrivalTime: { type: Type.STRING }
+          }
+        }
+      }
+    });
+    res.json(JSON.parse(response.text));
+  } catch (err) {
+    res.status(500).json({ error: 'Timing retrieval failed' });
+  }
+});
+
+/**
+ * Production Static File Serving
+ */
+const distPath = path.join(__dirname, '../dist');
+app.use(express.static(distPath));
+
+// Catch-all route to serve index.html for SPA (React Router)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(distPath, 'index.html'));
+});
+
+app.listen(port, () => {
+  console.log(`\x1b[32m✔ JourneyConnect Production Server running on http://localhost:${port}\x1b[0m`);
+});

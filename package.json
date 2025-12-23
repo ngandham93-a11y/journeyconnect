@@ -1,3 +1,4 @@
+
 {
   "name": "journey-connect",
   "private": true,
@@ -6,10 +7,13 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "node server/index.js"
   },
   "dependencies": {
     "@google/genai": "latest",
+    "cors": "^2.8.5",
+    "express": "^5.2.1",
     "lucide-react": "^0.560.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -31,4 +35,3 @@
     "node": ">=18"
   }
 }
-
