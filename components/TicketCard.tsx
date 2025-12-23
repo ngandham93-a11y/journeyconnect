@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import { Ticket, TicketType } from '../types';
-import { ArrowRight, IndianRupee, Trash2, AlertTriangle, Phone, User, X, BadgeCheck, Map } from 'lucide-react';
+import { ArrowRight, IndianRupee, Trash2, AlertTriangle, Phone, User, X, BadgeCheck, Map, ShieldCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getCurrentUser } from '../services/authService';
 import { deleteTicket } from '../utils/storage';
@@ -22,7 +21,6 @@ export const TicketCard: React.FC<TicketCardProps> = ({ ticket, onDelete, matchT
   const isOffer = ticket.type === TicketType.OFFER;
   const isOwner = currentUser?.id === ticket.userId;
   const isAdmin = currentUser?.role === 'ADMIN';
-  const canManage = isOwner || isAdmin;
 
   // Enhance container classes for match highlighting
   const containerClasses = `group relative bg-slate-900 rounded-2xl transition-all duration-300 overflow-hidden flex flex-col ${
@@ -153,17 +151,12 @@ export const TicketCard: React.FC<TicketCardProps> = ({ ticket, onDelete, matchT
 
           {/* Actions */}
           <div className="mt-5 pt-5 border-t border-slate-800">
-             {canManage ? (
-               <button
-                  onClick={handleMarkSoldClick}
-                  className="w-full flex justify-center items-center gap-2 py-3 px-4 rounded-xl bg-red-500/10 text-red-500 border border-red-500/20 text-sm font-bold hover:bg-red-500 hover:text-white transition-all duration-200"
-               >
-                  <Trash2 className="h-4 w-4" /> Delete Listing
-               </button>
-             ) : showContact ? (
-                <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 animate-fade-in">
+             {showContact ? (
+                <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 animate-fade-in mb-3">
                     <div className="flex justify-between items-start mb-3">
-                        <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Seller Details</div>
+                        <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider flex items-center gap-1">
+                          <User className="h-2 w-2" /> Poster Details
+                        </div>
                         <button onClick={() => setShowContact(false)} className="text-slate-500 hover:text-white p-1 rounded-full hover:bg-slate-800 transition-colors"><X className="h-3 w-3"/></button>
                     </div>
                     <div className="flex items-center gap-3 mb-3">
@@ -178,18 +171,38 @@ export const TicketCard: React.FC<TicketCardProps> = ({ ticket, onDelete, matchT
                         <span className="text-[10px] text-slate-600 group-hover/phone:text-cyan-500 uppercase font-bold">Tap to Copy</span>
                     </div>
                 </div>
-             ) : (
-                <button
-                  onClick={handleConnectClick}
-                  className={`w-full flex justify-center items-center py-3 px-4 rounded-xl text-sm font-bold transition-all duration-200 ${
-                    isOffer 
-                    ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white hover:from-cyan-500 hover:to-blue-500 shadow-lg shadow-cyan-900/20" 
-                    : "bg-slate-800 text-cyan-400 hover:bg-slate-700 border border-slate-700"
-                  }`}
-                >
-                    {isOffer ? 'Connect Ticket holder' : 'Contact Requestor'}
-                </button>
-             )}
+             ) : null}
+
+             <div className="flex flex-col gap-2">
+                {/* Always show connecting options to Admins */}
+                {(isAdmin || !isOwner) && !showContact && (
+                    <button
+                      onClick={handleConnectClick}
+                      className={`w-full flex justify-center items-center py-3 px-4 rounded-xl text-sm font-bold transition-all duration-200 ${
+                        isOffer 
+                        ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white hover:from-cyan-500 hover:to-blue-500 shadow-lg shadow-cyan-900/20" 
+                        : "bg-slate-800 text-cyan-400 hover:bg-slate-700 border border-slate-700"
+                      }`}
+                    >
+                        {isAdmin ? 'View Poster Contact' : (isOffer ? 'Connect Ticket holder' : 'Contact Requestor')}
+                    </button>
+                )}
+
+                {/* Management Options for Owner or Admin */}
+                {(isOwner || isAdmin) && (
+                  <button
+                    onClick={handleMarkSoldClick}
+                    className={`w-full flex justify-center items-center gap-2 py-3 px-4 rounded-xl text-sm font-bold transition-all duration-200 ${
+                      isAdmin 
+                        ? "bg-slate-950 text-red-500 border border-red-500/20 hover:bg-red-500 hover:text-white" 
+                        : "bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500 hover:text-white"
+                    }`}
+                  >
+                    {isAdmin && <ShieldCheck className="h-4 w-4" />}
+                    <Trash2 className="h-4 w-4" /> Delete Listing
+                  </button>
+                )}
+             </div>
           </div>
         </div>
       </div>

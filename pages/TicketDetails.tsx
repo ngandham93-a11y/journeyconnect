@@ -1,10 +1,9 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getTicketById, deleteTicket } from '../utils/storage';
 import { Ticket } from '../types';
 import { getCurrentUser } from '../services/authService';
-import { ArrowLeft, ArrowRight, User, MessageCircle, Phone, Trash2, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, ArrowRight, User, MessageCircle, Phone, Trash2, AlertTriangle, ShieldCheck } from 'lucide-react';
 
 export const TicketDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -15,16 +14,22 @@ export const TicketDetails: React.FC = () => {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const currentUser = getCurrentUser();
 
+  const isAdmin = currentUser?.role === 'ADMIN';
+
   useEffect(() => {
     const fetchTicket = async () => {
         if (id) {
             const found = await getTicketById(id);
             setTicket(found);
+            // Auto reveal for admins
+            if (currentUser?.role === 'ADMIN') {
+              setRevealContact(true);
+            }
         }
         setIsLoading(false);
     };
     fetchTicket();
-  }, [id]);
+  }, [id, currentUser?.role]);
 
   const handleMarkAsSold = () => {
     setShowConfirmModal(true);
@@ -56,7 +61,6 @@ export const TicketDetails: React.FC = () => {
   if (!ticket) return <div className="p-20 text-center text-slate-500">Ticket not found</div>;
 
   const isOwner = currentUser?.id === ticket.userId;
-  const isAdmin = currentUser?.role === 'ADMIN';
   const canManage = isOwner || isAdmin;
 
   // Safe date parsing to avoid timezone shifts
@@ -79,6 +83,7 @@ export const TicketDetails: React.FC = () => {
                     onClick={handleMarkAsSold}
                     className="flex items-center gap-2 bg-red-500/10 border border-red-500/50 text-red-500 hover:bg-red-500 hover:text-white px-4 py-2 rounded-xl transition-all font-bold text-sm"
                 >
+                    {isAdmin && <ShieldCheck className="h-4 w-4" />}
                     <Trash2 className="h-4 w-4" /> Mark as Sold & Remove
                 </button>
             )}
@@ -140,13 +145,17 @@ export const TicketDetails: React.FC = () => {
             {/* Sidebar */}
             <div className="space-y-6">
                 <div className="bg-slate-900 rounded-3xl border border-slate-800 p-6 shadow-xl">
-                    <h3 className="font-bold text-white text-sm uppercase tracking-wider mb-5">Seller Info</h3>
+                    <div className="flex justify-between items-center mb-5">
+                      <h3 className="font-bold text-white text-sm uppercase tracking-wider">Poster Info</h3>
+                      {isAdmin && <ShieldCheck className="h-4 w-4 text-emerald-400" />}
+                    </div>
                     <div className="flex items-center gap-4 mb-6">
                         <div className="h-14 w-14 bg-gradient-to-br from-slate-700 to-slate-800 rounded-full flex items-center justify-center border border-slate-600 shadow-inner">
                             <User className="h-6 w-6 text-slate-300" />
                         </div>
                         <div>
                             <p className="font-bold text-white text-lg">{ticket.sellerName || 'Anonymous'}</p>
+                            {isAdmin && <p className="text-[10px] text-emerald-400 font-bold uppercase tracking-tighter">Moderator View</p>}
                         </div>
                     </div>
                     
@@ -154,7 +163,7 @@ export const TicketDetails: React.FC = () => {
                        <div className="space-y-3 bg-slate-950 p-4 rounded-xl border border-slate-800 animate-fade-in">
                           <div className="flex items-center gap-3 text-sm text-white">
                              <Phone className="h-4 w-4 text-cyan-400" />
-                             {ticket.userContact}
+                             <span className="font-mono text-lg">{ticket.userContact}</span>
                           </div>
                           <div className="text-xs text-slate-500 mt-2 text-center">
                              Please mention "JourneyConnect" when contacting.
