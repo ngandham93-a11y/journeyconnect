@@ -230,7 +230,7 @@ export const ListingForm: React.FC = () => {
           <form onSubmit={handlePreSubmit} className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                <div className="md:col-span-2">
-                  <label className={labelClass}>Ticket Type</label>
+                  <label className={labelClass}>Purpose</label>
                   <div className="grid grid-cols-2 gap-4">
                     <button type="button" onClick={() => setFormData({...formData, type: TicketType.OFFER})} className={`py-3 rounded-xl border font-bold transition-all ${formData.type === TicketType.OFFER ? 'bg-cyan-500/10 border-cyan-500 text-cyan-400' : 'bg-slate-950 border-slate-800 text-slate-500'}`}>Giving Up</button>
                     <button type="button" onClick={() => setFormData({...formData, type: TicketType.REQUEST})} className={`py-3 rounded-xl border font-bold transition-all ${formData.type === TicketType.REQUEST ? 'bg-amber-500/10 border-amber-500 text-amber-400' : 'bg-slate-950 border-slate-800 text-slate-500'}`}>Need a Ticket</button>

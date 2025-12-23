@@ -22,8 +22,8 @@ export default async function handler(req: Request): Promise<Response> {
   try {
     const { prompt } = (await req.json()) as { prompt: string };
 
-    // Fix: Always create a new GoogleGenAI instance inside the handler to ensure the latest API key is used
-    const ai = new GoogleGenAI({ apiKey });
+    // Fix: Always create a new GoogleGenAI instance inside the handler using process.env.API_KEY directly
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     // Fix: Use gemini-3-flash-preview instead of prohibited gemini-1.5-flash
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',

@@ -6,7 +6,7 @@ import { Ticket, TicketType, TrainClass } from '../types';
 import { TicketCard } from '../components/TicketCard';
 import { findMatchesAI, analyzeRouteMatches } from '../services/geminiService';
 import { getCurrentUser } from '../services/authService';
-import { Search, Loader2, Sparkles, Filter, X, MapPin, ArrowDown, Lock, Ticket as TicketIcon, Calendar, RefreshCw } from 'lucide-react';
+import { Search, Loader2, Sparkles, Filter, X, MapPin, ArrowDown, Lock, Ticket as TicketIcon, Calendar, RefreshCw, FilterX, Info } from 'lucide-react';
 import { StationInput } from '../components/StationInput';
 import { CustomDatePicker } from '../components/CustomDatePicker';
 
@@ -58,6 +58,7 @@ export const Home: React.FC = () => {
   const [aiMatches, setAiMatches] = useState<string[] | null>(null);
   const [isAiSearching, setIsAiSearching] = useState(false);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [showResetToast, setShowResetToast] = useState(false);
 
   const [routeFrom, setRouteFrom] = useState('');
   const [routeTo, setRouteTo] = useState('');
@@ -91,18 +92,27 @@ export const Home: React.FC = () => {
   }, []);
 
   const handleClearAll = useCallback(() => {
-    setSearchQuery('');
-    setAiMatches(null);
-    setRouteFrom('');
-    setRouteTo('');
-    setRouteMatches({ exact: [], partial: [] });
-    setFilterType('ALL');
-    setSelectedClasses([]);
-    setFilterDate('');
-    setSortBy('DATE');
-    setShowMyListings(false);
-    setMatchFilter('ALL');
-  }, []);
+    // Check if any filters were actually active
+    const hasFilters = searchQuery || routeFrom || routeTo || filterType !== 'ALL' || selectedClasses.length > 0 || filterDate || showMyListings;
+    
+    if (hasFilters) {
+      setSearchQuery('');
+      setAiMatches(null);
+      setRouteFrom('');
+      setRouteTo('');
+      setRouteMatches({ exact: [], partial: [] });
+      setFilterType('ALL');
+      setSelectedClasses([]);
+      setFilterDate('');
+      setSortBy('DATE');
+      setShowMyListings(false);
+      setMatchFilter('ALL');
+
+      // Show toast
+      setShowResetToast(true);
+      setTimeout(() => setShowResetToast(false), 2000);
+    }
+  }, [searchQuery, routeFrom, routeTo, filterType, selectedClasses, filterDate, showMyListings]);
 
   useEffect(() => {
     fetchTickets();
@@ -126,8 +136,8 @@ export const Home: React.FC = () => {
 
     const timer = setTimeout(async () => {
         setIsRouteAnalyzing(true);
-        const matches = await analyzeRouteMatches(routeFrom, routeTo, allTickets);
-        setRouteMatches(matches || { exact: [], partial: [] });
+        const matchesData = await analyzeRouteMatches(routeFrom, routeTo, allTickets);
+        setRouteMatches(matchesData || { exact: [], partial: [] });
         setIsRouteAnalyzing(false);
     }, 1000);
 
@@ -280,7 +290,17 @@ export const Home: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative">
+      {/* Filters Removed Notification */}
+      {showResetToast && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="bg-cyan-950 border border-cyan-500/50 text-cyan-400 px-6 py-2.5 rounded-full shadow-[0_0_20px_rgba(6,182,212,0.3)] flex items-center gap-2 font-bold text-sm backdrop-blur-md">
+            <FilterX className="h-4 w-4" />
+            Filters removed
+          </div>
+        </div>
+      )}
+
       <div className="mb-12 text-center">
         <h1 className="text-5xl font-black text-white mb-4 tracking-tight">
            Share the <span className="text-cyan-400">Journey</span>
@@ -313,7 +333,7 @@ export const Home: React.FC = () => {
            <div className="p-6 md:p-8">
                <form onSubmit={handleSearch} className="flex flex-col gap-6">
                   <div className="flex flex-col md:flex-row gap-3">
-                      <div className="flex-1 relative group">
+                      <div className="hidden md:block flex-1 relative group">
                         <Search className="absolute left-4 top-3.5 h-5 w-5 text-slate-500 group-focus-within:text-cyan-400 transition-colors" />
                         <input 
                           type="text" 
@@ -331,7 +351,7 @@ export const Home: React.FC = () => {
                       <button 
                         type="submit"
                         disabled={isAiSearching}
-                        className="px-8 py-3.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-cyan-900/20 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                        className="hidden md:flex px-8 py-3.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-cyan-900/20 items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                       >
                         {isAiSearching ? <Loader2 className="animate-spin h-5 w-5" /> : <Sparkles className="h-4 w-4" />}
                         {isAiSearching ? 'AI Search...' : 'Smart Search'}
@@ -347,7 +367,7 @@ export const Home: React.FC = () => {
                   <div className="flex items-center gap-4 px-2">
                      <div className="h-px bg-slate-800 flex-1"></div>
                      <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest flex items-center gap-2">
-                        <MapPin className="h-3 w-3" /> Or Find by Route
+                        <MapPin className="h-3 w-3" /> Find by Route
                      </span>
                      <div className="h-px bg-slate-800 flex-1"></div>
                   </div>
@@ -428,7 +448,7 @@ export const Home: React.FC = () => {
                 </div>
               )}
               <div className="mb-8">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Ticket Type</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Type</label>
                 <select 
                   value={filterType} 
                   onChange={(e) => setFilterType(e.target.value as any)} 

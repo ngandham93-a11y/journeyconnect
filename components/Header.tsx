@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { TrainFront, PlusCircle, LogIn, LogOut, Shield } from 'lucide-react';
@@ -45,12 +46,15 @@ export const Header: React.FC = () => {
           <nav className="hidden md:flex items-center gap-4">
             
             {user && (
-              <Link to="/give" className={`px-5 py-2.5 rounded-lg border transition-all duration-300 flex items-center gap-2 font-bold text-sm ${isActive('/give')}`}>
+              <Link 
+                to="/give" 
+                className={`p-2.5 rounded-xl border transition-all duration-300 flex items-center justify-center font-bold text-sm ${isActive('/give')}`}
+                title="Give Up Ticket"
+              >
                 <div className="relative">
                    <PlusCircle className="h-5 w-5 text-red-500 animate-pulse" />
                    <div className="absolute inset-0 bg-red-500/50 rounded-full blur-[6px] animate-pulse"></div>
                 </div>
-                Give Up Ticket
               </Link>
             )}
 
