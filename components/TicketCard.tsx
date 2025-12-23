@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Ticket, TicketType } from '../types';
 import { ArrowRight, IndianRupee, Trash2, AlertTriangle, Phone, User, X, BadgeCheck, Map, ShieldCheck } from 'lucide-react';
@@ -141,7 +142,7 @@ export const TicketCard: React.FC<TicketCardProps> = ({ ticket, onDelete, matchT
           {/* Price Only */}
           <div className="flex items-end justify-end mt-auto">
               <div className="text-right">
-                  <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-0.5">Price per person</div>
+                  <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-0.5">Price</div>
                   <div className="flex items-center justify-end text-cyan-400 font-black text-2xl drop-shadow-[0_0_8px_rgba(6,182,212,0.3)]">
                       <IndianRupee className="h-5 w-5 mr-0.5" />
                       {ticket.price.toLocaleString('en-IN')}
@@ -184,7 +185,7 @@ export const TicketCard: React.FC<TicketCardProps> = ({ ticket, onDelete, matchT
                         : "bg-slate-800 text-cyan-400 hover:bg-slate-700 border border-slate-700"
                       }`}
                     >
-                        {isAdmin ? 'View Poster Contact' : (isOffer ? 'Connect Ticket holder' : 'Contact Requestor')}
+                        {isAdmin ? 'View Poster Contact' : (isOffer ? 'Connect Ticket holder' : 'Connect Requestor')}
                     </button>
                 )}
 

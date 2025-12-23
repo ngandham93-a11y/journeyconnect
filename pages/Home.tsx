@@ -300,7 +300,7 @@ export const Home: React.FC = () => {
            Share the <span className="text-cyan-400">Journey</span>
         </h1>
         <p className="text-slate-400 max-w-2xl mx-auto text-lg mb-8">
-           Connect instantly with travelers. Give up your spare ticket to someone in need, or find a confirmed seat for your urgent travel.
+           Connect instantly with travelers
         </p>
         <div className="flex flex-wrap justify-center gap-4">
             <Link to="/give" className="group relative px-8 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl font-bold text-white shadow-lg shadow-emerald-900/20 hover:scale-105 transition-all">
@@ -355,7 +355,7 @@ export const Home: React.FC = () => {
                         onClick={() => setShowMobileFilters(!showMobileFilters)}
                         className="md:hidden px-4 py-3 bg-slate-800 text-slate-300 font-bold rounded-xl flex items-center justify-center gap-2 border border-slate-700 hover:bg-slate-700 hover:text-white transition-colors"
                       >
-                        <Filter className="h-4 w-4" /> Filters
+                        <Filter className="h-4 w-4" /> Apply Filters
                       </button>
                   </div>
                   <div className="flex items-center gap-4 px-2">
@@ -426,7 +426,7 @@ export const Home: React.FC = () => {
            <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 sticky top-24 shadow-xl">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="font-bold text-white text-lg flex items-center gap-2">
-                    <Filter className="h-4 w-4 text-cyan-400" /> Filters
+                    <Filter className="h-4 w-4 text-cyan-400" /> Apply Filters
                 </h3>
                 {showMobileFilters && <button onClick={() => setShowMobileFilters(false)}><X className="h-4 w-4 text-slate-400" /></button>}
               </div>
