@@ -92,7 +92,6 @@ export const Home: React.FC = () => {
   }, []);
 
   const handleClearAll = useCallback(() => {
-    // Check if any filters were actually active to avoid spamming toast
     const hasActiveFilters = searchQuery || routeFrom || routeTo || filterType !== 'ALL' || selectedClasses.length > 0 || filterDate || showMyListings;
     
     if (hasActiveFilters) {
@@ -108,7 +107,6 @@ export const Home: React.FC = () => {
       setShowMyListings(false);
       setMatchFilter('ALL');
 
-      // Show the "Filters removed" notification
       setShowResetToast(true);
       setTimeout(() => setShowResetToast(false), 2000);
     }
@@ -116,8 +114,6 @@ export const Home: React.FC = () => {
 
   useEffect(() => {
     fetchTickets();
-    
-    // Listen for the reset-filters event triggered by Header.tsx
     window.addEventListener('reset-filters', handleClearAll);
     return () => window.removeEventListener('reset-filters', handleClearAll);
   }, [fetchTickets, handleClearAll]);
@@ -147,7 +143,6 @@ export const Home: React.FC = () => {
   useEffect(() => {
     let result = [...allTickets];
 
-    // 1) Text + AI search
     if (searchQuery) {
       const lowerQ = searchQuery.toLowerCase();
       const textMatches = result.filter(t =>
@@ -167,7 +162,6 @@ export const Home: React.FC = () => {
       }
     }
 
-    // 2) Route filters
     if (routeFrom && routeTo) {
       if (!isRouteAnalyzing) {
         const exact = routeMatches?.exact || [];
@@ -202,12 +196,10 @@ export const Home: React.FC = () => {
       }
     }
 
-    // 3) Ticket type filter
     if (filterType !== 'ALL') {
       result = result.filter(t => t.type === filterType);
     }
 
-    // 4) Class filter
     if (selectedClasses.length > 0) {
       result = result.filter(t => {
         if (selectedClasses.includes(t.classType)) return true;
@@ -216,17 +208,14 @@ export const Home: React.FC = () => {
       });
     }
 
-    // 5) Date filter
     if (filterDate) {
       result = result.filter(t => t.date === filterDate);
     }
 
-    // 6) My listings
     if (showMyListings && currentUser) {
       result = result.filter(t => t.userId === currentUser.id);
     }
 
-    // 7) Sorting
     if (sortBy === 'PRICE_ASC') result.sort((a, b) => a.price - b.price);
     else if (sortBy === 'PRICE_DESC') result.sort((a, b) => b.price - a.price);
     else if (sortBy === 'DATE') result.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -285,10 +274,9 @@ export const Home: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative">
-      {/* Toast Notification */}
       {showResetToast && (
         <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] animate-in fade-in slide-in-from-top-4 duration-300">
-          <div className="bg-cyan-950 border border-cyan-500/40 text-cyan-400 px-6 py-2.5 rounded-full shadow-[0_0_20px_rgba(6,182,212,0.3)] flex items-center gap-2 font-bold <sm:text-xs text-sm backdrop-blur-md">
+          <div className="bg-cyan-950 border border-cyan-500/40 text-cyan-400 px-6 py-2.5 rounded-full shadow-[0_0_20px_rgba(6,182,212,0.3)] flex items-center gap-2 font-bold text-sm backdrop-blur-md">
             <FilterX className="h-4 w-4" />
             Filters removed
           </div>
@@ -420,9 +408,9 @@ export const Home: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-8">
+      <div className="flex flex-col md:flex-row gap-8 items-start">
         <div className={`md:w-72 flex-shrink-0 space-y-6 ${showMobileFilters ? 'block' : 'hidden md:block'}`}>
-           <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 sticky top-24 shadow-xl">
+           <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="font-bold text-white text-lg flex items-center gap-2">
                     <Filter className="h-4 w-4 text-cyan-400" /> Apply Filters
@@ -431,7 +419,7 @@ export const Home: React.FC = () => {
               </div>
               {currentUser && (
                 <div className="mb-8 p-4 bg-cyan-950/20 border border-cyan-500/20 rounded-xl flex items-center justify-between">
-                    <span className="text-sm font-bold text-cyan-400">Show My Active Listings</span>
+                    <span className="text-sm font-bold text-cyan-400">My Active Listings</span>
                     <button 
                         onClick={() => setShowMyListings(!showMyListings)}
                         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 focus:ring-offset-slate-900 ${showMyListings ? 'bg-cyan-500' : 'bg-slate-700'}`}
@@ -440,6 +428,18 @@ export const Home: React.FC = () => {
                     </button>
                 </div>
               )}
+              
+              <div className="mb-8">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <Calendar className="h-3 w-3" /> Travel Date
+                </label>
+                <CustomDatePicker 
+                  value={filterDate} 
+                  onChange={setFilterDate} 
+                  availableDates={datesWithPostings} 
+                />
+              </div>
+
               <div className="mb-8">
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Type</label>
                 <select 
@@ -452,16 +452,7 @@ export const Home: React.FC = () => {
                     <option value={TicketType.REQUEST}>Requests</option>
                  </select>
               </div>
-              <div className="mb-8">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-                    <Calendar className="h-3 w-3" /> Travel Date
-                </label>
-                <CustomDatePicker 
-                  value={filterDate} 
-                  onChange={setFilterDate} 
-                  availableDates={datesWithPostings} 
-                />
-              </div>
+
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Class</label>
                 <div className="space-y-3">

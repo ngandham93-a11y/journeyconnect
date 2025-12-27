@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Ticket, TicketType } from '../types';
-import { ArrowRight, IndianRupee, Trash2, AlertTriangle, Phone, User, X, BadgeCheck, Map, ShieldCheck, MessageSquare, LayoutGrid } from 'lucide-react';
+import { ArrowRight, IndianRupee, Trash2, AlertTriangle, Phone, User, X, BadgeCheck, Map, ShieldCheck, MessageSquare, LayoutGrid, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getCurrentUser } from '../services/authService';
 import { deleteTicket } from '../utils/storage';
@@ -65,6 +65,14 @@ export const TicketCard: React.FC<TicketCardProps> = ({ ticket, onDelete, matchT
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const displayMonth = dateParts[1] ? monthNames[parseInt(dateParts[1]) - 1] : '--';
 
+  // Format Listing Date
+  const listingDate = new Date(ticket.createdAt);
+  const listingDateStr = `${listingDate.getDate()} ${monthNames[listingDate.getMonth()]}`;
+  
+  // Calculate relative age
+  const diffDays = Math.floor((Date.now() - ticket.createdAt) / (1000 * 60 * 60 * 24));
+  const daysOldText = diffDays === 0 ? 'today' : `${diffDays} day${diffDays === 1 ? '' : 's'} old`;
+
   return (
     <>
       <div className={containerClasses}>
@@ -110,13 +118,16 @@ export const TicketCard: React.FC<TicketCardProps> = ({ ticket, onDelete, matchT
                   )}
               </div>
             </div>
-            <div className="text-right bg-slate-950 p-3 rounded-xl border border-slate-800 min-w-[70px] flex flex-col items-center shadow-inner">
-               <div className="text-2xl font-black text-white leading-none">
-                  {displayDay}
-               </div>
-               <div className="text-[10px] uppercase text-slate-500 font-bold mt-1 tracking-widest">
-                  {displayMonth}
-               </div>
+            <div className="flex flex-col items-center">
+              <span className="text-[9px] font-black text-slate-600 uppercase tracking-tighter mb-1.5 leading-none">Travel Date</span>
+              <div className="text-right bg-slate-950 p-3 rounded-xl border border-slate-800 min-w-[70px] flex flex-col items-center shadow-inner">
+                 <div className="text-2xl font-black text-white leading-none">
+                    {displayDay}
+                 </div>
+                 <div className="text-[10px] uppercase text-slate-500 font-bold mt-1 tracking-widest">
+                    {displayMonth}
+                 </div>
+              </div>
             </div>
           </div>
 
@@ -144,9 +155,13 @@ export const TicketCard: React.FC<TicketCardProps> = ({ ticket, onDelete, matchT
               </div>
           </div>
 
-          {/* Comment & Price */}
+          {/* Comment, Listing Date & Price */}
           <div className="flex items-end justify-between mt-auto">
               <div className="flex-1 min-w-0 pr-4">
+                <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-bold uppercase tracking-tight mb-2">
+                   <Clock className="h-3 w-3 text-slate-600" />
+                   <span>Posted on {listingDateStr} <span className="text-slate-600 font-normal italic">({daysOldText})</span></span>
+                </div>
                 {ticket.comment && (
                   <div className="flex items-start gap-2 bg-slate-950/40 p-2 rounded-lg border border-slate-800/50 max-w-[200px]">
                     <MessageSquare className="h-3 w-3 text-cyan-500 shrink-0 mt-0.5" />
@@ -198,7 +213,6 @@ export const TicketCard: React.FC<TicketCardProps> = ({ ticket, onDelete, matchT
                 </button>
              )}
 
-             {/* Fix: replaced 'x' typo with '(isOwner || isAdmin)' check */}
              {(isOwner || isAdmin) && !showContact && (
               <button
                 onClick={handleMarkSoldClick}
