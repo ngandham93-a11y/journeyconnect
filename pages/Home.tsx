@@ -300,7 +300,7 @@ export const Home: React.FC = () => {
            Share the <span className="text-cyan-400">Journey</span>
         </h1>
         <p className="text-slate-400 max-w-2xl mx-auto text-lg mb-8">
-           Connect instantly with fellow travelers send your parcels instantly overnight within cities
+           Connect instantly with fellow travelers to send your parcels instantly overnight within cities
         </p>
         <div className="flex flex-wrap justify-center gap-4">
             <Link to="/give" className="group relative px-8 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl font-bold text-white shadow-lg shadow-emerald-900/20 hover:scale-105 transition-all">
