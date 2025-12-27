@@ -6,7 +6,7 @@ import { Ticket, TicketType, TrainClass } from '../types';
 import { TicketCard } from '../components/TicketCard';
 import { findMatchesAI, analyzeRouteMatches } from '../services/geminiService';
 import { getCurrentUser } from '../services/authService';
-import { Search, Loader2, Sparkles, Filter, X, MapPin, ArrowDown, Lock, Calendar, RefreshCw, FilterX, Package } from 'lucide-react';
+import { Search, Loader2, Sparkles, Filter, X, MapPin, ArrowDown, Lock, Calendar, RefreshCw, FilterX, Ticket as TicketIcon } from 'lucide-react';
 import { StationInput } from '../components/StationInput';
 import { CustomDatePicker } from '../components/CustomDatePicker';
 
@@ -72,6 +72,7 @@ export const Home: React.FC = () => {
   const [showMyListings, setShowMyListings] = useState(false);
   const [matchFilter, setMatchFilter] = useState<'ALL' | 'EXACT' | 'PARTIAL'>('ALL');
 
+  // Compute unique dates with postings for the green indicator
   const datesWithPostings = useMemo(() => {
     return new Set(allTickets.map(t => t.date));
   }, [allTickets]);
@@ -83,7 +84,7 @@ export const Home: React.FC = () => {
         const tickets = await getStoredTickets();
         setAllTickets(tickets);
     } catch (e) {
-        console.error("Home: Failed to fetch listings", e);
+        console.error("Home: Failed to fetch tickets", e);
     } finally {
         setIsLoading(false);
         setIsSyncing(false);
@@ -91,6 +92,7 @@ export const Home: React.FC = () => {
   }, []);
 
   const handleClearAll = useCallback(() => {
+    // Check if any filters were actually active to avoid spamming toast
     const hasActiveFilters = searchQuery || routeFrom || routeTo || filterType !== 'ALL' || selectedClasses.length > 0 || filterDate || showMyListings;
     
     if (hasActiveFilters) {
@@ -106,6 +108,7 @@ export const Home: React.FC = () => {
       setShowMyListings(false);
       setMatchFilter('ALL');
 
+      // Show the "Filters removed" notification
       setShowResetToast(true);
       setTimeout(() => setShowResetToast(false), 2000);
     }
@@ -113,6 +116,8 @@ export const Home: React.FC = () => {
 
   useEffect(() => {
     fetchTickets();
+    
+    // Listen for the reset-filters event triggered by Header.tsx
     window.addEventListener('reset-filters', handleClearAll);
     return () => window.removeEventListener('reset-filters', handleClearAll);
   }, [fetchTickets, handleClearAll]);
@@ -142,6 +147,7 @@ export const Home: React.FC = () => {
   useEffect(() => {
     let result = [...allTickets];
 
+    // 1) Text + AI search
     if (searchQuery) {
       const lowerQ = searchQuery.toLowerCase();
       const textMatches = result.filter(t =>
@@ -161,6 +167,7 @@ export const Home: React.FC = () => {
       }
     }
 
+    // 2) Route filters
     if (routeFrom && routeTo) {
       if (!isRouteAnalyzing) {
         const exact = routeMatches?.exact || [];
@@ -195,10 +202,12 @@ export const Home: React.FC = () => {
       }
     }
 
+    // 3) Ticket type filter
     if (filterType !== 'ALL') {
       result = result.filter(t => t.type === filterType);
     }
 
+    // 4) Class filter
     if (selectedClasses.length > 0) {
       result = result.filter(t => {
         if (selectedClasses.includes(t.classType)) return true;
@@ -207,14 +216,17 @@ export const Home: React.FC = () => {
       });
     }
 
+    // 5) Date filter
     if (filterDate) {
       result = result.filter(t => t.date === filterDate);
     }
 
+    // 6) My listings
     if (showMyListings && currentUser) {
       result = result.filter(t => t.userId === currentUser.id);
     }
 
+    // 7) Sorting
     if (sortBy === 'PRICE_ASC') result.sort((a, b) => a.price - b.price);
     else if (sortBy === 'PRICE_DESC') result.sort((a, b) => b.price - a.price);
     else if (sortBy === 'DATE') result.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -249,6 +261,14 @@ export const Home: React.FC = () => {
     setMatchFilter('ALL');
   };
 
+  const toggleClass = (cls: TrainClass) => {
+    if (selectedClasses.includes(cls)) {
+      setSelectedClasses(selectedClasses.filter(c => c !== cls));
+    } else {
+      setSelectedClasses([...selectedClasses, cls]);
+    }
+  };
+
   const getMatchType = (id: string): 'EXACT' | 'PARTIAL' | undefined => {
     if (routeMatches?.exact?.includes(id)) return 'EXACT';
     if (routeMatches?.partial?.includes(id)) return 'PARTIAL';
@@ -265,9 +285,10 @@ export const Home: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative">
+      {/* Toast Notification */}
       {showResetToast && (
         <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] animate-in fade-in slide-in-from-top-4 duration-300">
-          <div className="bg-cyan-950 border border-cyan-500/40 text-cyan-400 px-6 py-2.5 rounded-full shadow-[0_0_20px_rgba(6,182,212,0.3)] flex items-center gap-2 font-bold text-sm backdrop-blur-md">
+          <div className="bg-cyan-950 border border-cyan-500/40 text-cyan-400 px-6 py-2.5 rounded-full shadow-[0_0_20px_rgba(6,182,212,0.3)] flex items-center gap-2 font-bold <sm:text-xs text-sm backdrop-blur-md">
             <FilterX className="h-4 w-4" />
             Filters removed
           </div>
@@ -276,17 +297,17 @@ export const Home: React.FC = () => {
 
       <div className="mb-12 text-center">
         <h1 className="text-5xl font-black text-white mb-4 tracking-tight">
-           Ship with <span className="text-cyan-400">Travelers</span>
+           Share the <span className="text-cyan-400">Journey</span>
         </h1>
         <p className="text-slate-400 max-w-2xl mx-auto text-lg mb-8">
-           Connect instantly with fellow travelers to send your parcels securely within cities overnight
+           Connect instantly with fellow travelers to send your parcels instantly overnight within cities
         </p>
         <div className="flex flex-wrap justify-center gap-4">
             <Link to="/give" className="group relative px-8 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl font-bold text-white shadow-lg shadow-emerald-900/20 hover:scale-105 transition-all">
                 <div className="absolute inset-0 bg-white/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 <div className="flex items-center gap-3">
-                    <Package className="h-6 w-6" />
-                    <span className="text-lg">Register as Courier</span>
+                    <TicketIcon className="h-6 w-6" />
+                    <span className="text-lg">I have a spare ticket</span>
                 </div>
             </Link>
             <button 
@@ -294,7 +315,7 @@ export const Home: React.FC = () => {
                 className="px-8 py-4 bg-slate-800 border border-slate-700 rounded-2xl font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition-all flex items-center gap-3"
             >
                 <Search className="h-5 w-5" />
-                <span>Send a Parcel</span>
+                <span>I need a ticket</span>
             </button>
         </div>
       </div>
@@ -311,7 +332,7 @@ export const Home: React.FC = () => {
                           type="text" 
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
-                          placeholder="Search e.g. 'Small box Mumbai to Delhi tomorrow'"
+                          placeholder="Search by train name, number, or simply say 'AC ticket to Goa'"
                           className="w-full bg-slate-950 pl-12 pr-12 py-3.5 rounded-xl border border-slate-800 focus:border-cyan-500 text-white placeholder-slate-600 focus:ring-1 focus:ring-cyan-500 outline-none transition-all shadow-inner"
                         />
                         {searchQuery && (
@@ -326,29 +347,35 @@ export const Home: React.FC = () => {
                         className="hidden md:flex px-8 py-3.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-cyan-900/20 items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                       >
                         {isAiSearching ? <Loader2 className="animate-spin h-5 w-5" /> : <Sparkles className="h-4 w-4" />}
-                        {isAiSearching ? 'AI Searching...' : 'AI Dispatch'}
+                        {isAiSearching ? 'AI Search...' : 'Smart Search'}
                       </button>
                       <button 
                         type="button"
                         onClick={() => setShowMobileFilters(!showMobileFilters)}
                         className="md:hidden px-4 py-3 bg-slate-800 text-slate-300 font-bold rounded-xl flex items-center justify-center gap-2 border border-slate-700 hover:bg-slate-700 hover:text-white transition-colors"
                       >
-                        <Filter className="h-4 w-4" /> Filters
+                        <Filter className="h-4 w-4" /> Apply Filters
                       </button>
                   </div>
                   <div className="flex items-center gap-4 px-2">
                      <div className="h-px bg-slate-800 flex-1"></div>
                      <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest flex items-center gap-2">
-                        <MapPin className="h-3 w-3" /> Set Route
+                        <MapPin className="h-3 w-3" /> Find by Route
                      </span>
                      <div className="h-px bg-slate-800 flex-1"></div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="bg-slate-950/80 p-1.5 rounded-2xl border border-slate-800 group-focus-within:border-cyan-500/50 transition-colors">
-                        <StationInput label="From City" value={routeFrom} onChange={setRouteFrom} placeholder="Origin City" />
+                      <div className="relative group">
+                          <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-transparent rounded-2xl opacity-0 group-focus-within:opacity-100 transition-opacity pointer-events-none"></div>
+                          <div className="bg-slate-950/80 p-1.5 rounded-2xl border border-slate-800 group-focus-within:border-cyan-500/50 transition-colors">
+                            <StationInput label="From Station" value={routeFrom} onChange={setRouteFrom} placeholder="Origin (e.g. Mumbai)" />
+                          </div>
                       </div>
-                      <div className="bg-slate-950/80 p-1.5 rounded-2xl border border-slate-800 group-focus-within:border-cyan-500/50 transition-colors">
-                        <StationInput label="To City" value={routeTo} onChange={setRouteTo} placeholder="Destination City" />
+                      <div className="relative group">
+                          <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-transparent rounded-2xl opacity-0 group-focus-within:opacity-100 transition-opacity pointer-events-none"></div>
+                          <div className="bg-slate-950/80 p-1.5 rounded-2xl border border-slate-800 group-focus-within:border-cyan-500/50 transition-colors">
+                            <StationInput label="To Station" value={routeTo} onChange={setRouteTo} placeholder="Destination (e.g. Surat)" />
+                          </div>
                       </div>
                   </div>
                </form>
@@ -356,7 +383,7 @@ export const Home: React.FC = () => {
                    <div className="mt-4 pt-4 border-t border-slate-800/50 flex flex-col sm:flex-row justify-between items-center gap-3 min-h-[30px] animate-fade-in">
                         {isRouteAnalyzing ? (
                             <div className="text-cyan-400 text-xs font-bold flex items-center gap-2 animate-pulse bg-cyan-950/30 px-3 py-1.5 rounded-full border border-cyan-500/20">
-                                <Loader2 className="animate-spin h-3 w-3" /> Mapping logistics...
+                                <Loader2 className="animate-spin h-3 w-3" /> Analyzing connectivity...
                             </div>
                         ) : (
                            <div className="flex gap-4 text-xs font-bold">
@@ -369,7 +396,7 @@ export const Home: React.FC = () => {
                                   }`}
                                 >
                                     <span className={`w-2 h-2 rounded-full ${matchFilter === 'EXACT' ? 'bg-white' : 'bg-emerald-500 animate-pulse'}`}></span> 
-                                    Direct Routes ({routeMatches.exact.length})
+                                    Exact Match ({routeMatches.exact.length})
                                 </button>
                                 <button 
                                   onClick={() => handleMatchFilterClick('PARTIAL')}
@@ -380,12 +407,12 @@ export const Home: React.FC = () => {
                                   }`}
                                 >
                                     <span className={`w-2 h-2 rounded-full ${matchFilter === 'PARTIAL' ? 'bg-black' : 'bg-yellow-500'}`}></span> 
-                                    Connecting Routes ({routeMatches.partial.length})
+                                    Route Match ({routeMatches.partial.length})
                                 </button>
                            </div>
                         )}
                         <button onClick={handleClearRoute} className="text-slate-500 hover:text-white text-xs font-semibold flex items-center gap-1 hover:underline decoration-slate-600 underline-offset-4">
-                            Clear Filters <X className="h-3 w-3" />
+                            Clear Route Filters <X className="h-3 w-3" />
                         </button>
                    </div>
                )}
@@ -404,7 +431,7 @@ export const Home: React.FC = () => {
               </div>
               {currentUser && (
                 <div className="mb-8 p-4 bg-cyan-950/20 border border-cyan-500/20 rounded-xl flex items-center justify-between">
-                    <span className="text-sm font-bold text-cyan-400">My Shipments</span>
+                    <span className="text-sm font-bold text-cyan-400">Show My Active Listings</span>
                     <button 
                         onClick={() => setShowMyListings(!showMyListings)}
                         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 focus:ring-offset-slate-900 ${showMyListings ? 'bg-cyan-500' : 'bg-slate-700'}`}
@@ -415,7 +442,7 @@ export const Home: React.FC = () => {
               )}
               <div className="mb-8">
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-                    <Calendar className="h-3 w-3" /> Dispatch Date
+                    <Calendar className="h-3 w-3" /> Travel Date
                 </label>
                 <CustomDatePicker 
                   value={filterDate} 
@@ -424,16 +451,30 @@ export const Home: React.FC = () => {
                 />
               </div>
               <div className="mb-8">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Service Type</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Type</label>
                 <select 
                   value={filterType} 
                   onChange={(e) => setFilterType(e.target.value as any)} 
                   className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2.5 text-sm text-white focus:border-cyan-500 outline-none"
                 >
                     <option value="ALL">All Listings</option>
-                    <option value={TicketType.OFFER}>Couriers (Available)</option>
-                    <option value={TicketType.REQUEST}>Senders (Need Help)</option>
+                    <option value={TicketType.OFFER}>Available Offerings</option>
+                    <option value={TicketType.REQUEST}>Requests</option>
                  </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Class</label>
+                <div className="space-y-3">
+                    {Object.values(TrainClass).map(cls => (
+                        <label key={cls} className="flex items-center gap-3 text-sm text-slate-300 cursor-pointer group" title={cls}>
+                            <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${selectedClasses.includes(cls) ? 'bg-cyan-500 border-cyan-500' : 'border-slate-700 bg-slate-950 group-hover:border-slate-500'}`}>
+                                {selectedClasses.includes(cls) && <div className="w-2 h-2 bg-white rounded-sm" />}
+                            </div>
+                            <input type="checkbox" checked={selectedClasses.includes(cls)} onChange={() => toggleClass(cls)} className="hidden" />
+                            {cls}
+                        </label>
+                    ))}
+                </div>
               </div>
               <button 
                 onClick={() => fetchTickets(true)} 
@@ -441,7 +482,7 @@ export const Home: React.FC = () => {
                 className="w-full mt-6 py-2 bg-slate-800 text-xs font-bold text-slate-400 rounded-lg hover:text-white transition-colors border border-slate-700 flex items-center justify-center gap-2"
               >
                 {isSyncing ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
-                Refresh Feed
+                Refresh Listings
               </button>
            </div>
         </div>
@@ -449,15 +490,15 @@ export const Home: React.FC = () => {
         <div className="flex-1">
            <div className="flex justify-between items-center mb-6">
                <div className="flex items-center gap-2">
-                 <span className="text-sm text-slate-400 font-medium">Found <span className="text-white font-bold">{filteredTickets.length}</span> results</span>
+                 <span className="text-sm text-slate-400 font-medium">Found <span className="text-white font-bold">{filteredTickets.length}</span> tickets</span>
                  {isSyncing && <Loader2 className="h-3 w-3 text-cyan-500 animate-spin" />}
                </div>
                <div className="flex items-center gap-2">
                    <ArrowDown className="h-4 w-4 text-slate-600" />
                    <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)} className="bg-transparent border-none text-sm text-cyan-400 font-bold cursor-pointer focus:ring-0">
-                       <option value="DATE">Nearest Date</option>
-                       <option value="PRICE_ASC">Rate: Low to High</option>
-                       <option value="PRICE_DESC">Rate: High to Low</option>
+                       <option value="DATE">Newest First</option>
+                       <option value="PRICE_ASC">Price: Low to High</option>
+                       <option value="PRICE_DESC">Price: High to Low</option>
                    </select>
                </div>
            </div>
@@ -477,12 +518,15 @@ export const Home: React.FC = () => {
                             {!currentUser ? <Lock className="h-8 w-8 text-red-500" /> : <Search className="h-8 w-8 text-slate-700" />}
                         </div>
                         <h3 className="text-xl font-bold mb-2 text-white">
-                            {!currentUser ? 'Registration Required' : 'No matches found'}
+                            {!currentUser ? 'Login Required to View More' : 'No tickets found'}
                         </h3>
                         <p className="text-slate-500 max-w-sm mx-auto">
-                            {!currentUser ? "Please log in to browse available couriers and shipment requests." : "Try adjusting your route or dispatch filters."}
+                            {!currentUser ? "Please login to unlock full search capabilities." : "Try adjusting your filters or search query."}
                         </p>
-                        {!currentUser && <button onClick={() => navigate('/login')} className="mt-6 px-6 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-colors shadow-lg shadow-red-900/20">Login to Access</button>}
+                        {!currentUser && <button onClick={() => navigate('/login')} className="mt-6 px-6 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-colors shadow-lg shadow-red-900/20">Login to Unlock</button>}
+                        {currentUser && (searchQuery || (routeFrom || routeTo) || filterDate || filterType !== 'ALL' || selectedClasses.length > 0) && (
+                            <button onClick={handleClearAll} className="mt-4 text-cyan-400 text-sm hover:underline">Clear All Filters</button>
+                        )}
                     </div>
                 </div>
             )}
