@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { TrainFront, PlusCircle, LogIn, LogOut, Shield } from 'lucide-react';
+import { TrainFront, PlusCircle, LogIn, LogOut, Shield, Package } from 'lucide-react';
 import { getCurrentUser, logout } from '../services/authService';
 
 export const Header: React.FC = () => {
@@ -19,7 +19,6 @@ export const Header: React.FC = () => {
     : 'text-slate-400 hover:text-cyan-400 hover:bg-slate-900 border-transparent';
 
   const handleLogoClick = () => {
-    // Dispatch a custom event that Home.tsx will listen for to reset filters
     window.dispatchEvent(new CustomEvent('reset-filters'));
   };
 
@@ -35,7 +34,7 @@ export const Header: React.FC = () => {
             className="flex items-center gap-3 group"
           >
             <div className="bg-gradient-to-br from-cyan-500 to-blue-600 p-2.5 rounded-xl group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-cyan-900/20">
-              <TrainFront className="h-6 w-6 text-white" />
+              <Package className="h-6 w-6 text-white" />
             </div>
             <span className="text-2xl font-black tracking-tight text-white group-hover:text-cyan-400 transition-colors">
               Journey<span className="text-cyan-400">Connect</span>
@@ -48,13 +47,11 @@ export const Header: React.FC = () => {
             {user && (
               <Link 
                 to="/give" 
-                className={`p-2.5 rounded-xl border transition-all duration-300 flex items-center justify-center font-bold text-sm ${isActive('/give')}`}
-                title="Give Up Ticket"
+                className={`px-4 py-2 rounded-xl border transition-all duration-300 flex items-center justify-center font-bold text-sm gap-2 ${isActive('/give')}`}
+                title="List Space or Parcel"
               >
-                <div className="relative">
-                   <PlusCircle className="h-5 w-5 text-red-500 animate-pulse" />
-                   <div className="absolute inset-0 bg-red-500/50 rounded-full blur-[6px] animate-pulse"></div>
-                </div>
+                <PlusCircle className="h-4 w-4" />
+                <span>List Space / Parcel</span>
               </Link>
             )}
 
@@ -91,12 +88,9 @@ export const Header: React.FC = () => {
                 <Link 
                   to="/give" 
                   className="flex items-center gap-2 bg-slate-900/50 border border-slate-700/50 px-3 py-2 rounded-xl active:scale-95 transition-all"
-                  title="Give Up Ticket"
+                  title="List Space"
                 >
-                  <div className="relative">
-                     <PlusCircle className="h-6 w-6 text-red-500 animate-pulse" />
-                     <div className="absolute inset-0 bg-red-500/50 rounded-full blur-[8px] animate-pulse"></div>
-                  </div>
+                  <PlusCircle className="h-6 w-6 text-cyan-500 animate-pulse" />
                 </Link>
              )}
 
