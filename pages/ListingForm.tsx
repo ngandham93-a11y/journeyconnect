@@ -59,7 +59,6 @@ export const ListingForm: React.FC = () => {
     sellerName: currentUser?.name || 'User'
   });
 
-  // Word count calculation
   const getWordCount = (str: string) => str.trim().split(/\s+/).filter(Boolean).length;
   const wordCount = getWordCount(formData.comment);
 
@@ -165,27 +164,27 @@ export const ListingForm: React.FC = () => {
     if (!currentUser) return;
     setLoading(true);
 
-    if (!formData.trainNumber || formData.trainNumber.length < 5) {
+    if (!formData.trainNumber || formData.trainNumber.length !== 5) {
         setLoading(false);
-        alert("Please enter a valid 5-digit train number.");
+        alert("Valid 5-digit Train Number is mandatory.");
         return;
     }
 
     if (!formData.date) {
         setLoading(false);
-        alert("Please select a travel date.");
+        alert("Travel Date is mandatory.");
         return;
     }
 
-    if (!formData.price || Number(formData.price) <= 0 || !Number.isInteger(Number(formData.price))) {
+    if (!formData.price || Number(formData.price) <= 0) {
         setLoading(false);
-        alert("Please enter a valid price.");
+        alert("Valid Price is mandatory.");
         return;
     }
 
     if (wordCount > 10) {
         setLoading(false);
-        alert("Comment must be up to 10 words only.");
+        alert("Comment must be within 10 words.");
         return;
     }
     
@@ -336,7 +335,7 @@ export const ListingForm: React.FC = () => {
 
                <div className="md:col-span-2">
                   <div className="flex justify-between items-center mb-2">
-                    <label className={labelClass}>Comment (Optional)</label>
+                    <label className={labelClass}>Comment (Upto 10 words)</label>
                     <span className={`text-[10px] font-bold ${wordCount > 10 ? 'text-red-500' : 'text-slate-500'}`}>
                       {wordCount}/10 words
                     </span>
@@ -345,7 +344,7 @@ export const ListingForm: React.FC = () => {
                     <MessageSquare className="absolute left-4 top-3.5 h-4 w-4 text-slate-500" />
                     <textarea 
                       rows={2}
-                      placeholder="Add a short note (e.g. 'Near entrance' or 'Urgent travel')" 
+                      placeholder="Optional details..." 
                       value={formData.comment} 
                       onChange={(e) => setFormData({...formData, comment: e.target.value})} 
                       className={`${inputClass} pl-10 resize-none`} 

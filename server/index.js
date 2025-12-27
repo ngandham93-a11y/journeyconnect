@@ -34,7 +34,8 @@ app.post('/api/parse-ticket', async (req, res) => {
     const ai = getAI();
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `Extract railway ticket details from: "${text}"`,
+      contents: `Extract railway ticket details from: "${text}". 
+      Classes are: 1A, 2A, 3A, 3E, SL, CC, EC, EA, FC, 2S.`,
       config: {
         responseMimeType: 'application/json',
         responseSchema: {
@@ -46,9 +47,11 @@ app.post('/api/parse-ticket', async (req, res) => {
             toStation: { type: Type.STRING },
             date: { type: Type.STRING },
             classType: { type: Type.STRING },
+            berthType: { type: Type.STRING },
             type: { type: Type.STRING },
             price: { type: Type.NUMBER },
-            departureTime: { type: Type.STRING }
+            departureTime: { type: Type.STRING },
+            comment: { type: Type.STRING }
           }
         }
       }

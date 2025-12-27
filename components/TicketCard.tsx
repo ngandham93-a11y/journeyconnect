@@ -144,17 +144,19 @@ export const TicketCard: React.FC<TicketCardProps> = ({ ticket, onDelete, matchT
               </div>
           </div>
 
-          {/* Price & Comment */}
-          <div className="flex items-end justify-between mt-auto gap-4">
-              <div className="flex-1 min-w-0">
-                  {ticket.comment && (
-                    <div className="flex items-start gap-2 bg-slate-950/40 p-2.5 rounded-lg border border-slate-800/50">
-                       <MessageSquare className="h-3 w-3 text-cyan-500 shrink-0 mt-0.5" />
-                       <p className="text-[11px] text-slate-400 font-medium leading-snug italic line-clamp-2">"{ticket.comment}"</p>
-                    </div>
-                  )}
+          {/* Comment & Price */}
+          <div className="flex items-end justify-between mt-auto">
+              <div className="flex-1 min-w-0 pr-4">
+                {ticket.comment && (
+                  <div className="flex items-start gap-2 bg-slate-950/40 p-2 rounded-lg border border-slate-800/50 max-w-[200px]">
+                    <MessageSquare className="h-3 w-3 text-cyan-500 shrink-0 mt-0.5" />
+                    <p className="text-[11px] text-slate-400 leading-snug italic truncate overflow-hidden whitespace-nowrap" title={ticket.comment}>
+                      {ticket.comment}
+                    </p>
+                  </div>
+                )}
               </div>
-              <div className="text-right shrink-0">
+              <div className="text-right">
                   <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-0.5">Price</div>
                   <div className="flex items-center justify-end text-cyan-400 font-black text-2xl drop-shadow-[0_0_8px_rgba(6,182,212,0.3)]">
                       <IndianRupee className="h-5 w-5 mr-0.5" />
@@ -168,9 +170,7 @@ export const TicketCard: React.FC<TicketCardProps> = ({ ticket, onDelete, matchT
              {showContact ? (
                 <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 animate-fade-in mb-3">
                     <div className="flex justify-between items-start mb-3">
-                        <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider flex items-center gap-1">
-                          <User className="h-2 w-2" /> Poster Details
-                        </div>
+                        <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Poster Details</div>
                         <button onClick={() => setShowContact(false)} className="text-slate-500 hover:text-white p-1 rounded-full hover:bg-slate-800 transition-colors"><X className="h-3 w-3"/></button>
                     </div>
                     <div className="flex items-center gap-3 mb-3">
@@ -185,38 +185,28 @@ export const TicketCard: React.FC<TicketCardProps> = ({ ticket, onDelete, matchT
                         <span className="text-[10px] text-slate-600 group-hover/phone:text-cyan-500 uppercase font-bold">Tap to Copy</span>
                     </div>
                 </div>
-             ) : null}
+             ) : (
+                <button
+                  onClick={handleConnectClick}
+                  className={`w-full flex justify-center items-center py-3 px-4 rounded-xl text-sm font-bold transition-all duration-200 ${
+                    isOffer 
+                    ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white hover:from-cyan-500 hover:to-blue-500 shadow-lg shadow-cyan-900/20" 
+                    : "bg-slate-800 text-cyan-400 hover:bg-slate-700 border border-slate-700"
+                  }`}
+                >
+                    {isOffer ? 'Connect Ticket holder' : 'Connect Requestor'}
+                </button>
+             )}
 
-             <div className="flex flex-col gap-2">
-                {/* Always show connecting options to Admins */}
-                {(isAdmin || !isOwner) && !showContact && (
-                    <button
-                      onClick={handleConnectClick}
-                      className={`w-full flex justify-center items-center py-3 px-4 rounded-xl text-sm font-bold transition-all duration-200 ${
-                        isOffer 
-                        ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white hover:from-cyan-500 hover:to-blue-500 shadow-lg shadow-cyan-900/20" 
-                        : "bg-slate-800 text-cyan-400 hover:bg-slate-700 border border-slate-700"
-                      }`}
-                    >
-                        {isAdmin ? 'View Poster Contact' : (isOffer ? 'Connect Ticket holder' : 'Connect Requestor')}
-                    </button>
-                )}
-
-                {/* Management Options for Owner or Admin */}
-                {(isOwner || isAdmin) && (
-                  <button
-                    onClick={handleMarkSoldClick}
-                    className={`w-full flex justify-center items-center gap-2 py-3 px-4 rounded-xl text-sm font-bold transition-all duration-200 ${
-                      isAdmin 
-                        ? "bg-slate-950 text-red-500 border border-red-500/20 hover:bg-red-500 hover:text-white" 
-                        : "bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500 hover:text-white"
-                    }`}
-                  >
-                    {isAdmin && <ShieldCheck className="h-4 w-4" />}
-                    <Trash2 className="h-4 w-4" /> Delete Listing
-                  </button>
-                )}
-             </div>
+             {/* Fix: replaced 'x' typo with '(isOwner || isAdmin)' check */}
+             {(isOwner || isAdmin) && !showContact && (
+              <button
+                onClick={handleMarkSoldClick}
+                className="w-full mt-2 flex justify-center items-center gap-2 py-3 px-4 rounded-xl bg-red-500/10 text-red-500 border border-red-500/20 text-sm font-bold hover:bg-red-500 hover:text-white transition-all duration-200"
+              >
+                <Trash2 className="h-4 w-4" /> Delete Listing
+              </button>
+             )}
           </div>
         </div>
       </div>

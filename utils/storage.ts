@@ -58,7 +58,7 @@ const getFlexValue = (obj: any, targetKey: string) => {
         fromStation: ['source', 'from', 'origin', 'start', 'boarding', 'src'],
         toStation: ['destination', 'to', 'dest', 'end', 'arrival', 'dst'],
         classType: ['class', 'coach', 'berth', 'classtype', 'cl'],
-        berthType: ['seat', 'seattype', 'berth', 'berthpreference', 'position'],
+        berthType: ['seat', 'seattype', 'berthpreference'],
         userContact: ['phone', 'contact', 'mobile', 'whatsapp', 'phone_number'],
         sellerName: ['name', 'seller', 'user', 'postedby', 'name_of_seller'],
         price: ['price', 'fare', 'cost', 'amount', 'rate'],

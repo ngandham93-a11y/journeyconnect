@@ -6,7 +6,7 @@ import { Ticket, TicketType, TrainClass } from '../types';
 import { TicketCard } from '../components/TicketCard';
 import { findMatchesAI, analyzeRouteMatches } from '../services/geminiService';
 import { getCurrentUser } from '../services/authService';
-import { Search, Loader2, Sparkles, Filter, X, MapPin, ArrowDown, Lock, Calendar, RefreshCw, FilterX } from 'lucide-react';
+import { Search, Loader2, Sparkles, Filter, X, MapPin, ArrowDown, Lock, Calendar, RefreshCw, FilterX, Ticket as TicketIcon } from 'lucide-react';
 import { StationInput } from '../components/StationInput';
 import { CustomDatePicker } from '../components/CustomDatePicker';
 
@@ -288,7 +288,7 @@ export const Home: React.FC = () => {
       {/* Toast Notification */}
       {showResetToast && (
         <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] animate-in fade-in slide-in-from-top-4 duration-300">
-          <div className="bg-cyan-950 border border-cyan-500/40 text-cyan-400 px-6 py-2.5 rounded-full shadow-[0_0_20px_rgba(6,182,212,0.3)] flex items-center gap-2 font-bold text-sm backdrop-blur-md">
+          <div className="bg-cyan-950 border border-cyan-500/40 text-cyan-400 px-6 py-2.5 rounded-full shadow-[0_0_20px_rgba(6,182,212,0.3)] flex items-center gap-2 font-bold <sm:text-xs text-sm backdrop-blur-md">
             <FilterX className="h-4 w-4" />
             Filters removed
           </div>
@@ -300,13 +300,14 @@ export const Home: React.FC = () => {
            Share the <span className="text-cyan-400">Journey</span>
         </h1>
         <p className="text-slate-400 max-w-2xl mx-auto text-lg mb-8">
-           Connect instantly with fellow travelers and also send your parcels instantly overnight within cities
+           Connect instantly with fellow travelers send your parcels instantly overnight within cities
         </p>
         <div className="flex flex-wrap justify-center gap-4">
             <Link to="/give" className="group relative px-8 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl font-bold text-white shadow-lg shadow-emerald-900/20 hover:scale-105 transition-all">
                 <div className="absolute inset-0 bg-white/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 <div className="flex items-center gap-3">
-                    <span className="text-lg">Submit</span>
+                    <TicketIcon className="h-6 w-6" />
+                    <span className="text-lg">I have a spare ticket</span>
                 </div>
             </Link>
             <button 
@@ -314,7 +315,7 @@ export const Home: React.FC = () => {
                 className="px-8 py-4 bg-slate-800 border border-slate-700 rounded-2xl font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition-all flex items-center gap-3"
             >
                 <Search className="h-5 w-5" />
-                <span>Request</span>
+                <span>I need a ticket</span>
             </button>
         </div>
       </div>
@@ -421,7 +422,7 @@ export const Home: React.FC = () => {
 
       <div className="flex flex-col md:flex-row gap-8">
         <div className={`md:w-72 flex-shrink-0 space-y-6 ${showMobileFilters ? 'block' : 'hidden md:block'}`}>
-           <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 sticky top-24 shadow-xl">
+           <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="font-bold text-white text-lg flex items-center gap-2">
                     <Filter className="h-4 w-4 text-cyan-400" /> Apply Filters
@@ -440,6 +441,16 @@ export const Home: React.FC = () => {
                 </div>
               )}
               <div className="mb-8">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <Calendar className="h-3 w-3" /> Travel Date
+                </label>
+                <CustomDatePicker 
+                  value={filterDate} 
+                  onChange={setFilterDate} 
+                  availableDates={datesWithPostings} 
+                />
+              </div>
+              <div className="mb-8">
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Type</label>
                 <select 
                   value={filterType} 
@@ -450,16 +461,6 @@ export const Home: React.FC = () => {
                     <option value={TicketType.OFFER}>Available Offerings</option>
                     <option value={TicketType.REQUEST}>Requests</option>
                  </select>
-              </div>
-              <div className="mb-8">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-                    <Calendar className="h-3 w-3" /> Travel Date
-                </label>
-                <CustomDatePicker 
-                  value={filterDate} 
-                  onChange={setFilterDate} 
-                  availableDates={datesWithPostings} 
-                />
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Class</label>
