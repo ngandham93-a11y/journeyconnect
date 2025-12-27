@@ -41,7 +41,7 @@ export const ListingForm: React.FC = () => {
     departureTime: '',
     arrivalTime: '',
     classType: TrainClass.SL,
-    berthType: 'No Preference',
+    berthType: 'Standard Box',
     price: '' as string | number, 
     comment: '',
     userContact: currentUser?.phoneNumber || '',
@@ -50,27 +50,6 @@ export const ListingForm: React.FC = () => {
 
   const getWordCount = (str: string) => str.trim().split(/\s+/).filter(Boolean).length;
   const wordCount = getWordCount(formData.comment);
-
-  useEffect(() => {
-    const updateTimings = async () => {
-        if (formData.trainNumber.length === 5 && formData.fromStation.length > 3 && formData.toStation.length > 3) {
-            setFetchingTrain(true);
-            const details = await getUpdatedTrainTimings(formData.trainNumber, formData.fromStation, formData.toStation);
-            setFetchingTrain(false);
-            
-            if (details) {
-                setFormData(prev => ({
-                    ...prev,
-                    departureTime: details.departureTime || prev.departureTime,
-                    arrivalTime: details.arrivalTime || prev.arrivalTime
-                }));
-            }
-        }
-    };
-
-    const timeoutId = setTimeout(updateTimings, 1500); 
-    return () => clearTimeout(timeoutId);
-  }, [formData.trainNumber, formData.fromStation, formData.toStation]);
 
   const handleAIParse = async () => {
     if (!naturalInput) return;
@@ -92,7 +71,7 @@ export const ListingForm: React.FC = () => {
         }));
       }
     } catch (e) {
-      alert("Could not parse shipment info. Please fill manually.");
+      alert("Could not parse shipment details. Please fill manually.");
     } finally {
       setLoading(false);
     }
@@ -101,15 +80,12 @@ export const ListingForm: React.FC = () => {
   const handleTrainNumberChange = async (val: string) => {
     const numericVal = val.replace(/\D/g, '');
     if (numericVal.length > 5) return;
-
     setFormData(prev => ({ ...prev, trainNumber: numericVal }));
     setFetchError('');
-
     if (numericVal.length === 5) {
         setFetchingTrain(true);
         const info = await lookupTrainInfo(numericVal);
         setFetchingTrain(false);
-        
         if (info) {
             setFormData(prev => ({
                 ...prev,
@@ -120,7 +96,7 @@ export const ListingForm: React.FC = () => {
                 arrivalTime: info.arrivalTime || prev.arrivalTime
             }));
         } else {
-            setFetchError('Could not fetch transport details. Check API Key or enter manually.');
+            setFetchError('Could not fetch transport details. Enter manually.');
         }
     }
   };
@@ -131,59 +107,42 @@ export const ListingForm: React.FC = () => {
         const boardingMatch = t.fromStation.toLowerCase().trim() === formData.fromStation.toLowerCase().trim();
         const destMatch = t.toStation.toLowerCase().includes(formData.toStation.toLowerCase()) || 
                           formData.toStation.toLowerCase().includes(t.toStation.toLowerCase());
-
         if (!boardingMatch || !destMatch) return false;
-
         let dateMatch = t.date === formData.date;
         if (!dateMatch && isFlexibleDate && formData.date) {
             const tDate = new Date(t.date).getTime();
             const fDate = new Date(formData.date).getTime();
             if (Math.abs(tDate - fDate) / (1000 * 3600 * 24) <= 2) dateMatch = true;
         }
-
-        let classMatch = t.classType === formData.classType;
-        if (!classMatch && isFlexibleClass) classMatch = true;
-
-        return dateMatch && classMatch;
+        return dateMatch;
     });
   };
 
   const finalizeSubmission = async () => {
     if (!currentUser) return;
     setLoading(true);
-
-    if (!formData.trainNumber || formData.trainNumber.length !== 5) {
-        setLoading(false);
-        alert("Valid 5-digit Train/Transport ID is mandatory.");
-        return;
-    }
-
     if (!formData.date) {
         setLoading(false);
         alert("Dispatch Date is mandatory.");
         return;
     }
-
     if (!formData.price || Number(formData.price) <= 0) {
         setLoading(false);
-        alert("Delivery fee is mandatory.");
+        alert("Proposed fee is mandatory.");
         return;
     }
-
     if (wordCount > 10) {
         setLoading(false);
-        alert("Description must be within 10 words.");
+        alert("Details must be within 10 words.");
         return;
     }
     
-    const duration = calculateDuration(formData.departureTime, formData.arrivalTime);
-
     const newTicket: Ticket = {
       id: Math.random().toString(36).substr(2, 9),
       userId: currentUser.id,
       ...formData,
       price: Number(formData.price),
-      duration,
+      duration: "Calculated",
       status: TicketStatus.OPEN,
       createdAt: Date.now(),
       amenities: [],
@@ -251,7 +210,7 @@ export const ListingForm: React.FC = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <button type="button" onClick={() => setFormData({...formData, type: TicketType.OFFER})} className={`py-4 rounded-xl border font-bold transition-all flex flex-col items-center gap-1 ${formData.type === TicketType.OFFER ? 'bg-cyan-500/10 border-cyan-500 text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.1)]' : 'bg-slate-950 border-slate-800 text-slate-500'}`}>
                       <Package className="h-5 w-5 mb-1" />
-                      <span>I am Traveling (Space Available)</span>
+                      <span>I am Traveling (Courier Space)</span>
                     </button>
                     <button type="button" onClick={() => setFormData({...formData, type: TicketType.REQUEST})} className={`py-4 rounded-xl border font-bold transition-all flex flex-col items-center gap-1 ${formData.type === TicketType.REQUEST ? 'bg-amber-500/10 border-amber-500 text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.1)]' : 'bg-slate-950 border-slate-800 text-slate-500'}`}>
                       <User className="h-5 w-5 mb-1" />
@@ -261,25 +220,24 @@ export const ListingForm: React.FC = () => {
                </div>
                
                <div>
-                  <label className={labelClass}>Train / Flight / ID <span className="text-red-500">*</span></label>
+                  <label className={labelClass}>Transport Mode / Train Number</label>
                   <div className="relative">
                     <TrainFront className="absolute left-4 top-3.5 h-4 w-4 text-slate-500" />
-                    <input type="text" required placeholder="5-digit Train Number" value={formData.trainNumber} onChange={(e) => handleTrainNumberChange(e.target.value)} className={`${inputClass} pl-10`} />
+                    <input type="text" placeholder="e.g. 12101 or Flight AI302" value={formData.trainNumber} onChange={(e) => handleTrainNumberChange(e.target.value)} className={`${inputClass} pl-10`} />
                     {fetchingTrain && <Loader2 className="absolute right-4 top-3.5 h-4 w-4 text-cyan-500 animate-spin" />}
                   </div>
-                  {fetchError && <p className="text-[10px] text-red-500 mt-1">{fetchError}</p>}
                </div>
 
                <div>
-                  <label className={labelClass}>Transport Mode / Name</label>
-                  <input type="text" required placeholder="e.g. Rajdhani Express" value={formData.trainName} onChange={(e) => setFormData({...formData, trainName: e.target.value})} className={inputClass} />
+                  <label className={labelClass}>Vehicle Name</label>
+                  <input type="text" placeholder="e.g. Rajdhani Express" value={formData.trainName} onChange={(e) => setFormData({...formData, trainName: e.target.value})} className={inputClass} />
                </div>
 
                <div><StationInput label="From City" value={formData.fromStation} onChange={(v) => setFormData({...formData, fromStation: v})} required /></div>
                <div><StationInput label="To City" value={formData.toStation} onChange={(v) => setFormData({...formData, toStation: v})} required /></div>
 
                <div>
-                  <label className={labelClass}>Journey Date <span className="text-red-500">*</span></label>
+                  <label className={labelClass}>Dispatch Date <span className="text-red-500">*</span></label>
                   <CustomDatePicker 
                     value={formData.date} 
                     onChange={(v) => setFormData({...formData, date: v})} 
@@ -292,29 +250,11 @@ export const ListingForm: React.FC = () => {
                   )}
                </div>
 
-               <div className="grid grid-cols-2 gap-4">
-                 <div><label className={labelClass}>Dep Time</label><input type="time" value={formData.departureTime} onChange={(e) => setFormData({...formData, departureTime: e.target.value})} className={`${inputClass} [color-scheme:dark]`} /></div>
-                 <div><label className={labelClass}>Arr Time</label><input type="time" value={formData.arrivalTime} onChange={(e) => setFormData({...formData, arrivalTime: e.target.value})} className={`${inputClass} [color-scheme:dark]`} /></div>
-               </div>
-
-               <div>
-                  <label className={labelClass}>Travel Class (Space Type)</label>
-                  <select value={formData.classType} onChange={(e) => setFormData({...formData, classType: e.target.value as TrainClass})} className={inputClass}>
-                    {Object.values(TrainClass).map(c => (<option key={c} value={c}>{c}</option>))}
-                  </select>
-                  {formData.type === TicketType.REQUEST && (
-                    <div className="mt-3 flex items-center gap-3">
-                        <input type="checkbox" id="flexC" checked={isFlexibleClass} onChange={e => setIsFlexibleClass(e.target.checked)} className="rounded bg-slate-900 border-slate-700 text-cyan-500" />
-                        <label htmlFor="flexC" className="text-xs text-slate-400">Any Class (Flexible)</label>
-                    </div>
-                  )}
-               </div>
-
                <div>
                   <label className={labelClass}>Proposed Fee (₹) <span className="text-red-500">*</span></label>
                   <div className="relative">
                     <IndianRupee className="absolute left-4 top-3.5 h-4 w-4 text-slate-500" />
-                    <input type="number" required placeholder="Cost for delivery" value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} className={`${inputClass} pl-10`} />
+                    <input type="number" required placeholder="Proposed delivery cost" value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} className={`${inputClass} pl-10`} />
                   </div>
                </div>
 
@@ -358,7 +298,7 @@ export const ListingForm: React.FC = () => {
                 </div>
                 <div>
                    <h3 className="text-xl font-black text-white">Couriers Available!</h3>
-                   <p className="text-sm text-slate-400">Found {similarTickets.length} traveler(s) for your route.</p>
+                   <p className="text-sm text-slate-400">Found {similarTickets.length} traveler(s) on your route.</p>
                 </div>
               </div>
               <button onClick={() => setShowMatchModal(false)} className="text-slate-500 hover:text-white transition-colors">
@@ -380,10 +320,10 @@ export const ListingForm: React.FC = () => {
             </div>
             <div className="p-6 bg-slate-900 border-t border-slate-800 rounded-b-3xl flex flex-col md:flex-row gap-4 justify-between items-center">
                <button onClick={finalizeSubmission} className="text-slate-400 hover:text-white font-bold text-sm underline decoration-slate-600 underline-offset-4 hover:decoration-white transition-all">
-                  Ignore & Post Request Anyway
+                  Ignore & Post Anyway
                </button>
                <button onClick={() => navigate('/')} className="px-6 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-bold rounded-xl hover:shadow-[0_0_20px_rgba(6,182,212,0.4)] transition-all flex items-center gap-2">
-                  Browse All Shipments <ArrowRight className="h-4 w-4" />
+                  Browse Shipments <ArrowRight className="h-4 w-4" />
                </button>
             </div>
           </div>

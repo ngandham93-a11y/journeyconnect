@@ -249,14 +249,6 @@ export const Home: React.FC = () => {
     setMatchFilter('ALL');
   };
 
-  const toggleClass = (cls: TrainClass) => {
-    if (selectedClasses.includes(cls)) {
-      setSelectedClasses(selectedClasses.filter(c => c !== cls));
-    } else {
-      setSelectedClasses([...selectedClasses, cls]);
-    }
-  };
-
   const getMatchType = (id: string): 'EXACT' | 'PARTIAL' | undefined => {
     if (routeMatches?.exact?.includes(id)) return 'EXACT';
     if (routeMatches?.partial?.includes(id)) return 'PARTIAL';
@@ -287,7 +279,7 @@ export const Home: React.FC = () => {
            Ship with <span className="text-cyan-400">Travelers</span>
         </h1>
         <p className="text-slate-400 max-w-2xl mx-auto text-lg mb-8">
-           Connect instantly with fellow travelers to send your parcels instantly overnight within cities
+           Connect instantly with fellow travelers to send your parcels securely within cities overnight
         </p>
         <div className="flex flex-wrap justify-center gap-4">
             <Link to="/give" className="group relative px-8 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl font-bold text-white shadow-lg shadow-emerald-900/20 hover:scale-105 transition-all">
@@ -319,7 +311,7 @@ export const Home: React.FC = () => {
                           type="text" 
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
-                          placeholder="Search by city, train or simply 'Parcel from Delhi to Mumbai tomorrow'"
+                          placeholder="Search e.g. 'Small box Mumbai to Delhi tomorrow'"
                           className="w-full bg-slate-950 pl-12 pr-12 py-3.5 rounded-xl border border-slate-800 focus:border-cyan-500 text-white placeholder-slate-600 focus:ring-1 focus:ring-cyan-500 outline-none transition-all shadow-inner"
                         />
                         {searchQuery && (
@@ -353,10 +345,10 @@ export const Home: React.FC = () => {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="bg-slate-950/80 p-1.5 rounded-2xl border border-slate-800 group-focus-within:border-cyan-500/50 transition-colors">
-                        <StationInput label="From City" value={routeFrom} onChange={setRouteFrom} placeholder="Origin (e.g. Mumbai)" />
+                        <StationInput label="From City" value={routeFrom} onChange={setRouteFrom} placeholder="Origin City" />
                       </div>
                       <div className="bg-slate-950/80 p-1.5 rounded-2xl border border-slate-800 group-focus-within:border-cyan-500/50 transition-colors">
-                        <StationInput label="To City" value={routeTo} onChange={setRouteTo} placeholder="Destination (e.g. Surat)" />
+                        <StationInput label="To City" value={routeTo} onChange={setRouteTo} placeholder="Destination City" />
                       </div>
                   </div>
                </form>
@@ -412,7 +404,7 @@ export const Home: React.FC = () => {
               </div>
               {currentUser && (
                 <div className="mb-8 p-4 bg-cyan-950/20 border border-cyan-500/20 rounded-xl flex items-center justify-between">
-                    <span className="text-sm font-bold text-cyan-400">My Active Shipments</span>
+                    <span className="text-sm font-bold text-cyan-400">My Shipments</span>
                     <button 
                         onClick={() => setShowMyListings(!showMyListings)}
                         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 focus:ring-offset-slate-900 ${showMyListings ? 'bg-cyan-500' : 'bg-slate-700'}`}
@@ -423,7 +415,7 @@ export const Home: React.FC = () => {
               )}
               <div className="mb-8">
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-                    <Calendar className="h-3 w-3" /> Shipment Date
+                    <Calendar className="h-3 w-3" /> Dispatch Date
                 </label>
                 <CustomDatePicker 
                   value={filterDate} 
@@ -438,9 +430,9 @@ export const Home: React.FC = () => {
                   onChange={(e) => setFilterType(e.target.value as any)} 
                   className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2.5 text-sm text-white focus:border-cyan-500 outline-none"
                 >
-                    <option value="ALL">All Logistics</option>
-                    <option value={TicketType.OFFER}>Traveler Space</option>
-                    <option value={TicketType.REQUEST}>Parcel Requests</option>
+                    <option value="ALL">All Listings</option>
+                    <option value={TicketType.OFFER}>Couriers (Available)</option>
+                    <option value={TicketType.REQUEST}>Senders (Need Help)</option>
                  </select>
               </div>
               <button 
@@ -449,7 +441,7 @@ export const Home: React.FC = () => {
                 className="w-full mt-6 py-2 bg-slate-800 text-xs font-bold text-slate-400 rounded-lg hover:text-white transition-colors border border-slate-700 flex items-center justify-center gap-2"
               >
                 {isSyncing ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
-                Refresh Shipments
+                Refresh Feed
               </button>
            </div>
         </div>
@@ -457,7 +449,7 @@ export const Home: React.FC = () => {
         <div className="flex-1">
            <div className="flex justify-between items-center mb-6">
                <div className="flex items-center gap-2">
-                 <span className="text-sm text-slate-400 font-medium">Found <span className="text-white font-bold">{filteredTickets.length}</span> logistics options</span>
+                 <span className="text-sm text-slate-400 font-medium">Found <span className="text-white font-bold">{filteredTickets.length}</span> results</span>
                  {isSyncing && <Loader2 className="h-3 w-3 text-cyan-500 animate-spin" />}
                </div>
                <div className="flex items-center gap-2">
@@ -485,10 +477,10 @@ export const Home: React.FC = () => {
                             {!currentUser ? <Lock className="h-8 w-8 text-red-500" /> : <Search className="h-8 w-8 text-slate-700" />}
                         </div>
                         <h3 className="text-xl font-bold mb-2 text-white">
-                            {!currentUser ? 'Registration Required' : 'No shipments found'}
+                            {!currentUser ? 'Registration Required' : 'No matches found'}
                         </h3>
                         <p className="text-slate-500 max-w-sm mx-auto">
-                            {!currentUser ? "Please log in to browse available traveler space and parcel requests." : "Try adjusting your route or dispatch filters."}
+                            {!currentUser ? "Please log in to browse available couriers and shipment requests." : "Try adjusting your route or dispatch filters."}
                         </p>
                         {!currentUser && <button onClick={() => navigate('/login')} className="mt-6 px-6 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-colors shadow-lg shadow-red-900/20">Login to Access</button>}
                     </div>
