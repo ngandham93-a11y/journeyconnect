@@ -1,33 +1,27 @@
 /**
  * Cron Job: Sync users from Google Sheets to Postgres
- * Runs every 10 minutes automatically on Vercel
- * 
+ * Runs every 1 minute automatically on Vercel
+ *
  * Endpoint: /api/cron/sync-users
  * Method: GET
  * Auth: Uses CRON_SECRET environment variable
  */
 
-import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
-
-export const runtime = 'nodejs';
 
 // Google Sheet Configuration
 const SHEET_ID = process.env.GOOGLE_SHEETS_ID || '1J7ca-cB-oTOaoUWH2gAPi3gHHYTizZtwyn-mp41qndI';
 const SHEET_NAME = 'Users';
 const RANGE = `${SHEET_NAME}!A2:D`;
 
-export async function GET(request: NextRequest) {
+export async function handler(req: any, res: any) {
   try {
     // Verify the cron secret for security
-    const authHeader = request.headers.get('authorization');
+    const authHeader = req.headers.authorization || req.headers.get?.('authorization');
     const expectedAuth = `Bearer ${process.env.CRON_SECRET}`;
-
+    
     if (authHeader !== expectedAuth) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
     console.log('[SYNC] Starting user sync from Google Sheets...');
@@ -41,7 +35,7 @@ export async function GET(request: NextRequest) {
 
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${RANGE}?key=${apiKey}`;
     const sheetResponse = await fetch(url);
-
+    
     if (!sheetResponse.ok) {
       throw new Error(`Failed to fetch sheet: ${sheetResponse.statusText}`);
     }
@@ -51,7 +45,7 @@ export async function GET(request: NextRequest) {
 
     if (rows.length === 0) {
       console.log('[SYNC] No data found in sheet');
-      return NextResponse.json({
+      return res.status(200).json({
         success: true,
         message: 'No data to sync',
         syncedCount: 0,
@@ -61,7 +55,6 @@ export async function GET(request: NextRequest) {
     }
 
     console.log(`[SYNC] Found ${rows.length} rows to process`);
-
     let syncedCount = 0;
     let skippedCount = 0;
     const errors = [];
@@ -128,19 +121,14 @@ export async function GET(request: NextRequest) {
     };
 
     console.log('[SYNC] Sync completed:', summary);
-
-    return NextResponse.json(summary);
+    return res.status(200).json(summary);
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
     console.error('[SYNC] Sync failed:', error);
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: errorMsg,
-        timestamp: new Date().toISOString(),
-      },
-      { status: 500 }
-    );
+    return res.status(500).json({
+      success: false,
+      error: errorMsg,
+      timestamp: new Date().toISOString(),
+    });
   }
 }
