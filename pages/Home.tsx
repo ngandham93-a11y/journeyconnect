@@ -1,12 +1,12 @@
 
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getStoredTickets, deleteTicket } from '../utils/storage';
 import { Ticket, TicketType, TrainClass } from '../types';
 import { TicketCard } from '../components/TicketCard';
 import { findMatchesAI, analyzeRouteMatches } from '../services/geminiService';
 import { getCurrentUser } from '../services/authService';
-import { Search, Loader2, Sparkles, Filter, X, MapPin, ArrowDown, Lock, Calendar, RefreshCw, FilterX, Ticket as TicketIcon } from 'lucide-react';
+import { Search, Loader2, Sparkles, Filter, X, MapPin, ArrowDown, Lock, Calendar, RefreshCw, FilterX, Ticket as TicketIcon, ChevronDown, Check } from 'lucide-react';
 import { StationInput } from '../components/StationInput';
 import { CustomDatePicker } from '../components/CustomDatePicker';
 
@@ -72,7 +72,20 @@ export const Home: React.FC = () => {
   const [showMyListings, setShowMyListings] = useState(false);
   const [matchFilter, setMatchFilter] = useState<'ALL' | 'EXACT' | 'PARTIAL'>('ALL');
 
-  // Compute unique dates with postings for the green indicator
+  // Dropdown state for Class filter
+  const [isClassDropdownOpen, setIsClassDropdownOpen] = useState(false);
+  const classDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (classDropdownRef.current && !classDropdownRef.current.contains(e.target as Node)) {
+        setIsClassDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const datesWithPostings = useMemo(() => {
     return new Set(allTickets.map(t => t.date));
   }, [allTickets]);
@@ -288,7 +301,7 @@ export const Home: React.FC = () => {
            Share the <span className="text-cyan-400">Journey</span>
         </h1>
         <p className="text-slate-400 max-w-2xl mx-auto text-lg mb-8">
-           Connect instantly with fellow travelers and send your across parcels instantly overnight within cities
+           Connect instantly with fellow travelers and find tickets or send across parcels within cities
         </p>
         <div className="flex flex-wrap justify-center gap-4">
             <Link to="/give" className="group relative px-8 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl font-bold text-white shadow-lg shadow-emerald-900/20 hover:scale-105 transition-all">
@@ -353,18 +366,8 @@ export const Home: React.FC = () => {
                      <div className="h-px bg-slate-800 flex-1"></div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="relative group">
-                          <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-transparent rounded-2xl opacity-0 group-focus-within:opacity-100 transition-opacity pointer-events-none"></div>
-                          <div className="bg-slate-950/80 p-1.5 rounded-2xl border border-slate-800 group-focus-within:border-cyan-500/50 transition-colors">
-                            <StationInput label="From Station" value={routeFrom} onChange={setRouteFrom} placeholder="Origin (e.g. Mumbai)" />
-                          </div>
-                      </div>
-                      <div className="relative group">
-                          <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-transparent rounded-2xl opacity-0 group-focus-within:opacity-100 transition-opacity pointer-events-none"></div>
-                          <div className="bg-slate-950/80 p-1.5 rounded-2xl border border-slate-800 group-focus-within:border-cyan-500/50 transition-colors">
-                            <StationInput label="To Station" value={routeTo} onChange={setRouteTo} placeholder="Destination (e.g. Surat)" />
-                          </div>
-                      </div>
+                      <StationInput label="From Station" value={routeFrom} onChange={setRouteFrom} placeholder="Origin (e.g. Mumbai)" />
+                      <StationInput label="To Station" value={routeTo} onChange={setRouteTo} placeholder="Destination (e.g. Surat)" />
                   </div>
                </form>
                {(routeFrom || routeTo) && (
@@ -412,14 +415,14 @@ export const Home: React.FC = () => {
         <div className={`md:w-72 flex-shrink-0 space-y-6 ${showMobileFilters ? 'block' : 'hidden md:block'}`}>
            <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="font-bold text-white text-lg flex items-center gap-2">
+                <h3 className="font-bold text-white text-lg flex items-center gap-2 uppercase tracking-tight">
                     <Filter className="h-4 w-4 text-cyan-400" /> Apply Filters
                 </h3>
                 {showMobileFilters && <button onClick={() => setShowMobileFilters(false)}><X className="h-4 w-4 text-slate-400" /></button>}
               </div>
               {currentUser && (
                 <div className="mb-8 p-4 bg-cyan-950/20 border border-cyan-500/20 rounded-xl flex items-center justify-between">
-                    <span className="text-sm font-bold text-cyan-400">My Active Listings</span>
+                    <span className="text-sm font-bold text-cyan-400 uppercase tracking-tight">My Active Listings</span>
                     <button 
                         onClick={() => setShowMyListings(!showMyListings)}
                         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 focus:ring-offset-slate-900 ${showMyListings ? 'bg-cyan-500' : 'bg-slate-700'}`}
@@ -430,7 +433,7 @@ export const Home: React.FC = () => {
               )}
               
               <div className="mb-8">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
                     <Calendar className="h-3 w-3" /> Travel Date
                 </label>
                 <CustomDatePicker 
@@ -441,7 +444,7 @@ export const Home: React.FC = () => {
               </div>
 
               <div className="mb-8">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Type</label>
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Type</label>
                 <select 
                   value={filterType} 
                   onChange={(e) => setFilterType(e.target.value as any)} 
@@ -453,20 +456,36 @@ export const Home: React.FC = () => {
                  </select>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Class</label>
-                <div className="space-y-3">
-                    {Object.values(TrainClass).map(cls => (
-                        <label key={cls} className="flex items-center gap-3 text-sm text-slate-300 cursor-pointer group" title={cls}>
-                            <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${selectedClasses.includes(cls) ? 'bg-cyan-500 border-cyan-500' : 'border-slate-700 bg-slate-950 group-hover:border-slate-500'}`}>
-                                {selectedClasses.includes(cls) && <div className="w-2 h-2 bg-white rounded-sm" />}
-                            </div>
-                            <input type="checkbox" checked={selectedClasses.includes(cls)} onChange={() => toggleClass(cls)} className="hidden" />
-                            {cls}
-                        </label>
-                    ))}
-                </div>
+              <div className="relative" ref={classDropdownRef}>
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Class</label>
+                <button 
+                  type="button"
+                  onClick={() => setIsClassDropdownOpen(!isClassDropdownOpen)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2.5 text-sm text-white focus:border-cyan-500 outline-none flex items-center justify-between group transition-all"
+                >
+                  <span className={selectedClasses.length === 0 ? 'text-slate-500' : 'text-white font-medium'}>
+                      {selectedClasses.length === 0 ? 'All Classes' : 
+                       selectedClasses.length === 1 ? selectedClasses[0] : 
+                       `${selectedClasses.length} selected`}
+                  </span>
+                  <ChevronDown className={`h-4 w-4 text-slate-500 transition-transform duration-200 ${isClassDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {isClassDropdownOpen && (
+                  <div className="absolute z-50 left-0 right-0 mt-2 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl p-2 space-y-1 max-h-64 overflow-y-auto custom-scrollbar animate-in fade-in slide-in-from-top-2 duration-200">
+                     {Object.values(TrainClass).map(cls => (
+                         <label key={cls} className="flex items-center gap-3 text-sm text-slate-300 cursor-pointer group px-3 py-2 hover:bg-slate-800 rounded-lg transition-colors">
+                              <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${selectedClasses.includes(cls) ? 'bg-cyan-500 border-cyan-500' : 'border-slate-600 bg-slate-950 group-hover:border-slate-500'}`}>
+                                  {selectedClasses.includes(cls) && <Check className="h-3 w-3 text-white" />}
+                              </div>
+                              <input type="checkbox" checked={selectedClasses.includes(cls)} onChange={() => toggleClass(cls)} className="hidden" />
+                              {cls}
+                          </label>
+                     ))}
+                  </div>
+                )}
               </div>
+
               <button 
                 onClick={() => fetchTickets(true)} 
                 disabled={isSyncing}

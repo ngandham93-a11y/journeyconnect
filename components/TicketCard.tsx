@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Ticket, TicketType } from '../types';
-import { ArrowRight, IndianRupee, Trash2, AlertTriangle, Phone, User, X, BadgeCheck, Map, ShieldCheck, MessageSquare, LayoutGrid, Clock } from 'lucide-react';
+import { ArrowRight, IndianRupee, Trash2, AlertTriangle, Phone, User, X, BadgeCheck, Map, Clock, MessageSquare } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getCurrentUser } from '../services/authService';
 import { deleteTicket } from '../utils/storage';
@@ -23,7 +23,6 @@ export const TicketCard: React.FC<TicketCardProps> = ({ ticket, onDelete, matchT
   const isOwner = currentUser?.id === ticket.userId;
   const isAdmin = currentUser?.role === 'ADMIN';
 
-  // Enhance container classes for match highlighting
   const containerClasses = `group relative bg-slate-900 rounded-2xl transition-all duration-300 overflow-hidden flex flex-col ${
     matchType === 'EXACT'
       ? 'border-2 border-emerald-500 shadow-[0_0_30px_rgba(16,185,129,0.2)] scale-[1.02] z-10'
@@ -38,12 +37,9 @@ export const TicketCard: React.FC<TicketCardProps> = ({ ticket, onDelete, matchT
 
   const confirmSold = () => {
     deleteTicket(ticket.id);
-    
-    // Notify parent if callback exists to update counts
     if (onDelete) {
         onDelete(ticket.id);
     }
-    
     setIsDeleted(true);
     setShowConfirmModal(false);
   };
@@ -59,19 +55,13 @@ export const TicketCard: React.FC<TicketCardProps> = ({ ticket, onDelete, matchT
 
   if (isDeleted) return null;
 
-  // Safe date parsing to avoid timezone shifts
   const dateParts = ticket.date.split('-');
   const displayDay = dateParts[2] || '--';
-  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
   const displayMonth = dateParts[1] ? monthNames[parseInt(dateParts[1]) - 1] : '--';
 
-  // Format Listing Date
-  const listingDate = new Date(ticket.createdAt);
-  const listingDateStr = `${listingDate.getDate()} ${monthNames[listingDate.getMonth()]}`;
-  
-  // Calculate relative age
   const diffDays = Math.floor((Date.now() - ticket.createdAt) / (1000 * 60 * 60 * 24));
-  const daysOldText = diffDays === 0 ? 'today' : `${diffDays} day${diffDays === 1 ? '' : 's'} old`;
+  const daysOldText = diffDays === 0 ? 'today' : `${diffDays}d ago`;
 
   return (
     <>
@@ -84,7 +74,6 @@ export const TicketCard: React.FC<TicketCardProps> = ({ ticket, onDelete, matchT
         )}
 
         <div className="p-6 flex-1 flex flex-col relative z-30">
-          {/* Header */}
           <div className="flex justify-between items-start mb-6">
             <div>
               <div className="flex items-center gap-3 mb-2">
@@ -100,42 +89,35 @@ export const TicketCard: React.FC<TicketCardProps> = ({ ticket, onDelete, matchT
                   <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-extrabold tracking-wider uppercase bg-slate-800 text-cyan-400 border border-slate-700">
                       {ticket.classType}
                   </span>
-                  {ticket.berthType && ticket.berthType !== 'No Preference' && (
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-extrabold tracking-wider uppercase bg-slate-900 text-slate-300 border border-slate-800">
-                        {ticket.berthType}
-                    </span>
-                  )}
-                  
                   {matchType === 'EXACT' && (
-                    <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold uppercase bg-emerald-500 text-white shadow-lg shadow-emerald-900/50 gap-1">
-                        <BadgeCheck className="h-3 w-3" /> Exact Match
+                    <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold uppercase bg-emerald-500 text-white gap-1">
+                        <BadgeCheck className="h-3 w-3" /> Exact
                     </span>
                   )}
                   {matchType === 'PARTIAL' && (
-                    <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold uppercase bg-yellow-500 text-black shadow-lg shadow-yellow-900/50 gap-1">
+                    <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold uppercase bg-yellow-500 text-black gap-1">
                         <Map className="h-3 w-3" /> Route Match
                     </span>
                   )}
               </div>
             </div>
             <div className="flex flex-col items-center">
-              <span className="text-[9px] font-black text-slate-600 uppercase tracking-tighter mb-1.5 leading-none">Travel Date</span>
-              <div className="text-right bg-slate-950 p-3 rounded-xl border border-slate-800 min-w-[70px] flex flex-col items-center shadow-inner">
-                 <div className="text-2xl font-black text-white leading-none">
+              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 leading-none">Travel Date</span>
+              <div className="bg-slate-950 px-4 py-3 rounded-2xl border border-slate-800 min-w-[75px] flex flex-col items-center shadow-2xl">
+                 <div className="text-3xl font-black text-white leading-none">
                     {displayDay}
                  </div>
-                 <div className="text-[10px] uppercase text-slate-500 font-bold mt-1 tracking-widest">
+                 <div className="text-[11px] uppercase text-slate-500 font-extrabold mt-1 tracking-wider">
                     {displayMonth}
                  </div>
               </div>
             </div>
           </div>
 
-          {/* Timeline Visual */}
           <div className="flex items-center justify-between text-slate-300 mb-6 bg-slate-950/50 p-4 rounded-xl border border-slate-800/50">
               <div className="flex flex-col">
                   <span className="text-xl font-black text-white">{ticket.departureTime || '--:--'}</span>
-                  <span className="text-xs text-slate-500 font-semibold uppercase tracking-wide truncate max-w-[80px]" title={ticket.fromStation}>{ticket.fromStation.split(' ')[0]}</span>
+                  <span className="text-xs text-slate-500 font-semibold uppercase tracking-wide truncate max-w-[80px]">{ticket.fromStation.split(' ')[0]}</span>
               </div>
               
               <div className="flex-1 flex flex-col items-center px-4">
@@ -151,21 +133,20 @@ export const TicketCard: React.FC<TicketCardProps> = ({ ticket, onDelete, matchT
 
               <div className="flex flex-col items-end">
                   <span className="text-xl font-black text-white">{ticket.arrivalTime || '--:--'}</span>
-                  <span className="text-xs text-slate-500 font-semibold uppercase tracking-wide truncate max-w-[80px]" title={ticket.toStation}>{ticket.toStation.split(' ')[0]}</span>
+                  <span className="text-xs text-slate-500 font-semibold uppercase tracking-wide truncate max-w-[80px]">{ticket.toStation.split(' ')[0]}</span>
               </div>
           </div>
 
-          {/* Comment, Listing Date & Price */}
           <div className="flex items-end justify-between mt-auto">
               <div className="flex-1 min-w-0 pr-4">
-                <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-bold uppercase tracking-tight mb-2">
-                   <Clock className="h-3 w-3 text-slate-600" />
-                   <span>Posted on {listingDateStr} <span className="text-slate-600 font-normal italic">({daysOldText})</span></span>
+                <div className="flex items-center gap-1.5 text-[10px] text-slate-600 font-bold uppercase tracking-tight mb-2">
+                   <Clock className="h-3 w-3" />
+                   <span>Posted {daysOldText}</span>
                 </div>
                 {ticket.comment && (
                   <div className="flex items-start gap-2 bg-slate-950/40 p-2 rounded-lg border border-slate-800/50 max-w-[200px]">
                     <MessageSquare className="h-3 w-3 text-cyan-500 shrink-0 mt-0.5" />
-                    <p className="text-[11px] text-slate-400 leading-snug italic truncate overflow-hidden whitespace-nowrap" title={ticket.comment}>
+                    <p className="text-[11px] text-slate-400 leading-snug italic truncate overflow-hidden" title={ticket.comment}>
                       {ticket.comment}
                     </p>
                   </div>
@@ -180,7 +161,6 @@ export const TicketCard: React.FC<TicketCardProps> = ({ ticket, onDelete, matchT
               </div>
           </div>
 
-          {/* Actions */}
           <div className="mt-5 pt-5 border-t border-slate-800">
              {showContact ? (
                 <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 animate-fade-in mb-3">
@@ -197,7 +177,7 @@ export const TicketCard: React.FC<TicketCardProps> = ({ ticket, onDelete, matchT
                     <div className="flex items-center gap-2 bg-slate-900 p-3 rounded-lg border border-slate-800 group/phone cursor-pointer active:scale-95 transition-transform" onClick={() => {navigator.clipboard.writeText(ticket.userContact); alert("Copied!");}}>
                         <Phone className="h-4 w-4 text-cyan-400" />
                         <span className="font-mono text-lg text-cyan-400 font-bold tracking-wide flex-1">{ticket.userContact}</span>
-                        <span className="text-[10px] text-slate-600 group-hover/phone:text-cyan-500 uppercase font-bold">Tap to Copy</span>
+                        <span className="text-[10px] text-slate-600 group-hover/phone:text-cyan-500 uppercase font-bold">Copy</span>
                     </div>
                 </div>
              ) : (
@@ -225,7 +205,6 @@ export const TicketCard: React.FC<TicketCardProps> = ({ ticket, onDelete, matchT
         </div>
       </div>
 
-      {/* Confirmation Modal */}
       {showConfirmModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
           <div className="bg-slate-900 rounded-2xl border border-slate-800 shadow-2xl max-w-sm w-full p-6 animate-scale-up">
