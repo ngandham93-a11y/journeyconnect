@@ -3,12 +3,12 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, X } from 'lucide-react';
 
 interface CustomDatePickerProps {
-  value: string;
-  onChange: (date: string) => void;
+  value: string[]; // Updated to array for multi-select
+  onChange: (dates: string[]) => void;
   availableDates?: Set<string>;
 }
 
-export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onChange, availableDates = new Set() }) => {
+export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value = [], onChange, availableDates = new Set() }) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -36,8 +36,8 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onCha
   }, []);
 
   const [viewDate, setViewDate] = useState(() => {
-    if (value) {
-      const d = new Date(value);
+    if (value && value.length > 0) {
+      const d = new Date(value[0]);
       return isNaN(d.getTime()) ? new Date(today) : d;
     }
     return new Date(today);
@@ -90,8 +90,13 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onCha
   const handleDateSelect = (day: number, isDisabled: boolean) => {
     if (isDisabled) return;
     const dateStr = formatDateLocal(viewDate.getFullYear(), viewDate.getMonth(), day);
-    onChange(dateStr);
-    setIsOpen(false);
+    
+    // Toggle logic for multi-select
+    if (value.includes(dateStr)) {
+        onChange(value.filter(d => d !== dateStr));
+    } else {
+        onChange([...value, dateStr]);
+    }
   };
 
   const renderDays = () => {
@@ -107,7 +112,7 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onCha
       const dateStr = formatDateLocal(viewDate.getFullYear(), viewDate.getMonth(), d);
       const isOutOfRange = dateStr < minDateStr || dateStr > maxDateStr;
       const posting = availableDates.has(dateStr);
-      const selected = value === dateStr;
+      const selected = value.includes(dateStr);
       const isCurrentDay = formatDateLocal(today.getFullYear(), today.getMonth(), today.getDate()) === dateStr;
 
       days.push(
@@ -140,14 +145,16 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onCha
       >
         <div className="flex items-center gap-2 overflow-hidden">
           <CalendarIcon className="h-4 w-4 text-slate-500 group-hover:text-cyan-400 shrink-0" />
-          <span className={value ? 'text-white' : 'text-slate-600'}>
-            {value || 'Select Date'}
+          <span className={value.length > 0 ? 'text-white font-medium' : 'text-slate-600'}>
+            {value.length === 0 ? 'Select Dates' : 
+             value.length === 1 ? value[0] : 
+             `${value.length} dates selected`}
           </span>
         </div>
-        {value && (
+        {value.length > 0 && (
           <X 
             className="h-4 w-4 text-slate-500 hover:text-white shrink-0" 
-            onClick={(e) => { e.stopPropagation(); onChange(''); }} 
+            onClick={(e) => { e.stopPropagation(); onChange([]); }} 
           />
         )}
       </div>
@@ -188,11 +195,19 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onCha
             {renderDays()}
           </div>
 
-          <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-center gap-4">
+          <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between gap-4">
              <div className="flex items-center gap-1.5">
                 <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
                 <span className="text-[10px] text-slate-500 font-bold uppercase">Has Postings</span>
              </div>
+             {value.length > 0 && (
+                <button 
+                  onClick={() => onChange([])}
+                  className="text-[10px] text-cyan-400 font-black uppercase hover:text-cyan-300"
+                >
+                  Clear All
+                </button>
+             )}
           </div>
         </div>
       )}

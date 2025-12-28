@@ -285,9 +285,11 @@ export const ListingForm: React.FC = () => {
 
                <div>
                   <label className={labelClass}>Travel Date <span className="text-red-500">*</span></label>
+                  {/* FIX: CustomDatePicker expects string[] for multi-select, but ListingForm needs a single date.
+                      We wrap the single date in an array and take the latest selection from the result to maintain compatibility. */}
                   <CustomDatePicker 
-                    value={formData.date} 
-                    onChange={(v) => setFormData({...formData, date: v})} 
+                    value={formData.date ? [formData.date] : []} 
+                    onChange={(v) => setFormData({...formData, date: v.length > 0 ? v[v.length - 1] : ''})} 
                   />
                   {formData.type === TicketType.REQUEST && (
                     <div className="mt-3 flex items-center gap-2">

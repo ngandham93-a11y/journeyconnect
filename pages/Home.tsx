@@ -67,12 +67,11 @@ export const Home: React.FC = () => {
   
   const [filterType, setFilterType] = useState<'ALL' | TicketType>('ALL');
   const [selectedClasses, setSelectedClasses] = useState<TrainClass[]>([]);
-  const [filterDate, setFilterDate] = useState<string>('');
+  const [filterDate, setFilterDate] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<'PRICE_ASC' | 'PRICE_DESC' | 'DATE'>('DATE');
   const [showMyListings, setShowMyListings] = useState(false);
   const [matchFilter, setMatchFilter] = useState<'ALL' | 'EXACT' | 'PARTIAL'>('ALL');
 
-  // Dropdown state for Class filter
   const [isClassDropdownOpen, setIsClassDropdownOpen] = useState(false);
   const classDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -105,7 +104,7 @@ export const Home: React.FC = () => {
   }, []);
 
   const handleClearAll = useCallback(() => {
-    const hasActiveFilters = searchQuery || routeFrom || routeTo || filterType !== 'ALL' || selectedClasses.length > 0 || filterDate || showMyListings;
+    const hasActiveFilters = searchQuery || routeFrom || routeTo || filterType !== 'ALL' || selectedClasses.length > 0 || filterDate.length > 0 || showMyListings;
     
     if (hasActiveFilters) {
       setSearchQuery('');
@@ -115,7 +114,7 @@ export const Home: React.FC = () => {
       setRouteMatches({ exact: [], partial: [] });
       setFilterType('ALL');
       setSelectedClasses([]);
-      setFilterDate('');
+      setFilterDate([]);
       setSortBy('DATE');
       setShowMyListings(false);
       setMatchFilter('ALL');
@@ -221,8 +220,8 @@ export const Home: React.FC = () => {
       });
     }
 
-    if (filterDate) {
-      result = result.filter(t => t.date === filterDate);
+    if (filterDate.length > 0) {
+      result = result.filter(t => filterDate.includes(t.date));
     }
 
     if (showMyListings && currentUser) {
@@ -420,14 +419,16 @@ export const Home: React.FC = () => {
                 </h3>
                 {showMobileFilters && <button onClick={() => setShowMobileFilters(false)}><X className="h-4 w-4 text-slate-400" /></button>}
               </div>
+              
+              {/* My Active Listings Toggle - Matched to Screenshot */}
               {currentUser && (
-                <div className="mb-8 p-4 bg-cyan-950/20 border border-cyan-500/20 rounded-xl flex items-center justify-between">
-                    <span className="text-sm font-bold text-cyan-400 uppercase tracking-tight">My Active Listings</span>
+                <div className="mb-8 p-4 bg-slate-900/40 border border-slate-800 rounded-2xl flex items-center justify-between ring-1 ring-cyan-500/10">
+                    <span className="text-[11px] font-black text-cyan-450 uppercase tracking-widest leading-none">My Active Listings</span>
                     <button 
                         onClick={() => setShowMyListings(!showMyListings)}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 focus:ring-offset-slate-900 ${showMyListings ? 'bg-cyan-500' : 'bg-slate-700'}`}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${showMyListings ? 'bg-cyan-500/40' : 'bg-slate-800'}`}
                     >
-                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${showMyListings ? 'translate-x-6' : 'translate-x-1'}`} />
+                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${showMyListings ? 'translate-x-6' : 'translate-x-1'} shadow-sm`} />
                     </button>
                 </div>
               )}
@@ -534,7 +535,7 @@ export const Home: React.FC = () => {
                             {!currentUser ? "Please login to unlock full search capabilities." : "Try adjusting your filters or search query."}
                         </p>
                         {!currentUser && <button onClick={() => navigate('/login')} className="mt-6 px-6 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-colors shadow-lg shadow-red-900/20">Login to Unlock</button>}
-                        {currentUser && (searchQuery || (routeFrom || routeTo) || filterDate || filterType !== 'ALL' || selectedClasses.length > 0) && (
+                        {currentUser && (searchQuery || (routeFrom || routeTo) || filterDate.length > 0 || filterType !== 'ALL' || selectedClasses.length > 0) && (
                             <button onClick={handleClearAll} className="mt-4 text-cyan-400 text-sm hover:underline">Clear All Filters</button>
                         )}
                     </div>
