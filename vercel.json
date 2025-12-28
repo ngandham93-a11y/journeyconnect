@@ -1,7 +1,17 @@
 {
   "crons": [
     {
-"path": "/sync-users",      "schedule": "*/1 * * * *"
+      "path": "/sync-users",
+      "schedule": "*/5 * * * *"
     }
-  ]
+  ],
+  "functions": {
+    "api/sync-users.js": {
+      "memory": 1024,
+      "maxDuration": 60
+    },
+    ".vercel/functions/sync-users.ts": {
+      "runtime": "edge"
+    }
+  }
 }
