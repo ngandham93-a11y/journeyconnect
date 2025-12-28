@@ -1,12 +1,10 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-import { sql } from '@vercel/postgres';
-
 /**
- * Vercel Edge Function for user synchronization
- * Works seamlessly with Vite and other frameworks
+ * Vercel Edge Function for user synchronization (Vite-compatible)
+ * Uses standard Web API instead of Next.js imports
  * Runs globally for low-latency syncing
  */
+
+import { sql } from '@vercel/postgres';
 
 const CONFIG = {
   MAX_RETRIES: 3,
@@ -35,28 +33,29 @@ async function fetchWithRetry(url: string, retries = CONFIG.MAX_RETRIES): Promis
   }
 }
 
-export default async function handler(request: NextRequest) {
+export default async function handler(request: Request) {
   const syncStartTime = Date.now();
   const requestId = `edge-sync-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
   // Only allow POST and GET requests
   if (request.method !== 'POST' && request.method !== 'GET') {
-    return NextResponse.json(
-      { error: 'Method not allowed' },
-      { status: 405 }
+    return new Response(
+      JSON.stringify({ error: 'Method not allowed' }),
+      { status: 405, headers: { 'Content-Type': 'application/json' } }
     );
   }
 
   try {
-    // Verify authorization
-    const authHeader = request.headers.get('authorization');
-    const expectedAuth = `Bearer ${process.env.CRON_SECRET}`;
-
-    if (authHeader !== expectedAuth && request.method === 'POST') {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+    // Verify authorization (required for POST)
+    if (request.method === 'POST') {
+      const authHeader = request.headers.get('authorization');
+      const expectedAuth = `Bearer ${process.env.CRON_SECRET}`;
+      if (authHeader !== expectedAuth) {
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized' }),
+          { status: 401, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
     console.log(`[${requestId}] Edge Sync initiated`);
@@ -69,27 +68,26 @@ export default async function handler(request: NextRequest) {
 
     const RANGE = `${CONFIG.SHEET_NAME}!A2:D`;
     const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.GOOGLE_SHEETS_ID}/values/${RANGE}?key=${apiKey}`;
-
     console.log(`[${requestId}] Fetching from Google Sheets`);
-    const sheetResponse = await fetchWithRetry(sheetsUrl);
 
+    const sheetResponse = await fetchWithRetry(sheetsUrl);
     if (!sheetResponse.ok) {
       throw new Error(`Failed to fetch sheet: ${sheetResponse.statusText}`);
     }
 
-    const data = await sheetResponse.json();
+    const data = await sheetResponse.json() as { values?: string[][] };
     const rows = data.values || [];
 
     if (rows.length === 0) {
-      return NextResponse.json(
-        {
+      return new Response(
+        JSON.stringify({
           success: true,
           message: 'No data to sync',
           syncedCount: 0,
           skippedCount: 0,
           requestId,
-        },
-        { status: 200 }
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
@@ -100,12 +98,14 @@ export default async function handler(request: NextRequest) {
 
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
+
       if (!row || row.length === 0) {
         skippedCount++;
         continue;
       }
 
       const [phoneNumber, pin, name, role] = row;
+
       if (!phoneNumber || phoneNumber.toString().trim() === '') {
         skippedCount++;
         continue;
@@ -131,7 +131,7 @@ export default async function handler(request: NextRequest) {
         `;
 
         syncedCount++;
-        console.log(`[${requestId}] ✓ Synced ${normalizedPhone}`);
+        console.log(`[${requestId}] Synced ${normalizedPhone}`);
       } catch (err) {
         skippedCount++;
         errors.push({
@@ -139,14 +139,13 @@ export default async function handler(request: NextRequest) {
           phone: phoneNumber,
           error: err instanceof Error ? err.message : String(err),
         });
-        console.error(`[${requestId}] ✗ Row ${i + 1} error:`, err);
+        console.error(`[${requestId}] Row ${i + 1} error:`, err);
       }
     }
 
     const duration = Date.now() - syncStartTime;
-
-    return NextResponse.json(
-      {
+    return new Response(
+      JSON.stringify({
         success: true,
         message: 'Sync completed',
         syncedCount,
@@ -155,23 +154,22 @@ export default async function handler(request: NextRequest) {
         durationMs: duration,
         requestId,
         ...(errors.length > 0 && { errors }),
-      },
-      { status: 200 }
+      }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (error) {
     const duration = Date.now() - syncStartTime;
     const errorMsg = error instanceof Error ? error.message : String(error);
-
     console.error(`[${requestId}] Sync failed:`, error);
 
-    return NextResponse.json(
-      {
+    return new Response(
+      JSON.stringify({
         success: false,
         error: errorMsg,
         durationMs: duration,
         requestId,
-      },
-      { status: 500 }
+      }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
 }
